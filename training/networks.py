@@ -73,8 +73,8 @@ class Conv2d(torch.nn.Module):
         f_pad = (f.shape[-1] - 1) // 2 if f is not None else 0
 
         if self.fused_resample and self.up and w is not None:
-            x = torch.nn.functional.conv_transpose2d(x, f.mul(4).tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=w_pad+f_pad)
-            x = torch.nn.functional.conv2d(x, w)
+            x = torch.nn.functional.conv_transpose2d(x, f.mul(4).tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=max(f_pad - w_pad, 0))
+            x = torch.nn.functional.conv2d(x, w, padding=max(w_pad - f_pad, 0))
         elif self.fused_resample and self.down and w is not None:
             x = torch.nn.functional.conv2d(x, w, padding=w_pad+f_pad)
             x = torch.nn.functional.conv2d(x, f.tile([self.out_channels, 1, 1, 1]), groups=self.out_channels, stride=2)
