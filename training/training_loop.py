@@ -119,7 +119,6 @@ def training_loop(
     dist.update_progress(cur_nimg // 1000, total_kimg)
     stats_jsonl = None
     while True:
-
         # Accumulate gradients.
         optimizer.zero_grad(set_to_none=True)
         for round_idx in range(num_accumulation_rounds):

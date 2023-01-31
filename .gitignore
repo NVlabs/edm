@@ -1,0 +1,10 @@
+models/
+downloads/
+training-runs/
+*.pkl
+out/
+*.pt
+datasets/
+*.zip
+__pycache__/
+*.pyc

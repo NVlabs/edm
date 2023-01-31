@@ -12,6 +12,7 @@ import numpy as np
 import torch
 from torch_utils import persistence
 from torch.nn.functional import silu
+from torch import nn
 
 #----------------------------------------------------------------------------
 # Unified routine for initializing weights and biases.
@@ -87,6 +88,66 @@ class Conv2d(torch.nn.Module):
                 x = torch.nn.functional.conv2d(x, w, padding=w_pad)
         if b is not None:
             x = x.add_(b.reshape(1, -1, 1, 1))
+        return x
+
+
+#--------------------------------------------------------------
+# fourier layer
+class SpectralConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=True):
+        super(SpectralConv2d, self).__init__()
+
+        """
+        2D Fourier layer. It does FFT, linear transform, and Inverse FFT.
+        """
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.modes1 = modes1 #Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.modes2 = modes2
+        self.down = down
+        self.up = up
+
+        self.verbose = verbose
+
+        self.scale = (1 / (in_channels * out_channels))
+        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+        
+    # Complex multiplication
+    def compl_mul2d(self, input, weights):
+        # (batch, in_channel, x,y), (in_channel, out_channel, x,y) -> (batch, out_channel, x,y)
+        return torch.einsum("bixyt,ioxyt->boxyt", input, weights)
+
+    # Downsampling by truncating fourier modes?
+    def forward(self, x):
+        print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
+        batchsize = x.shape[0]
+        #Compute Fourier coeffcients up to factor of e^(- something constant)
+        x_ft = torch.fft.rfft2(x)
+        x_ft = torch.view_as_real(x_ft)
+
+        # Multiply relevant Fourier modes
+        out_ft = torch.zeros((batchsize, self.out_channels,  x.size(-2), x.size(-1)//2 + 1, 2), device=x.device)
+        # I guess we are implicitly taking the lowest and highest modes?
+        out_ft[:, :, :self.modes1, :self.modes2] = \
+            self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
+        out_ft[:, :, -self.modes1:, :self.modes2] = \
+            self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
+
+        #Return to physical space
+        out_ft = torch.view_as_complex(out_ft)
+        x = torch.fft.irfft2(out_ft, s=(x.size(-2), x.size(-1)))
+
+        # Up/Down sampling
+        if self.down:
+            size = x.shape[-2:]
+            size = [s // 2 for s in size]
+            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
+        elif self.up:
+            size = x.shape[-2:]
+            size = [2 * s for s in size]
+            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
         return x
 
 #----------------------------------------------------------------------------
@@ -186,6 +247,109 @@ class UNetBlock(torch.nn.Module):
             x = x * self.skip_scale
         return x
 
+
+#----------------------------------------------------------------------------
+# Unified DualFNO U-Net block with optional up/downsampling and self-attention.
+# Represents the union of all features employed by the DDPM++, NCSN++, and
+# ADM architectures.
+
+@persistence.persistent_class
+class DualUNetBlock(torch.nn.Module):
+    def __init__(self,
+        in_channels, out_channels, emb_channels, up=False, down=False, attention=False,
+        num_heads=None, channels_per_head=64, dropout=0, skip_scale=1, eps=1e-5,
+        resample_filter=[1,1], resample_proj=False, adaptive_scale=True,
+        init=dict(), init_zero=dict(init_weight=0), init_attn=None, 
+        use_spatial=True, use_spectral=False, in_res=-1, verbose=False,
+    ):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.emb_channels = emb_channels
+        self.num_heads = 0 if not attention else num_heads if num_heads is not None else out_channels // channels_per_head
+        self.dropout = dropout
+        self.skip_scale = skip_scale
+        self.adaptive_scale = adaptive_scale
+        self.use_spatial = use_spatial
+        self.use_spectral = use_spectral
+        self.verbose = verbose
+        self.in_res = in_res
+        self.out_res = in_res
+        self.down = down
+        self.up = up
+        if self.up:
+            self.out_res = 2 * in_res
+        elif self.down:
+            self.out_res = in_res // 2
+        #print("Spatial: ", self.use_spatial, "Spectral: ", self.use_spectral) if verbose else None
+
+        self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
+        if self.use_spatial:
+            self.conv0 = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init)
+            self.conv1 = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=3, **init_zero)
+        if self.use_spectral:
+            # nmodes should basically always be N // 2 + 1
+            assert in_res > 0
+            self.spec_conv0 = SpectralConv2d(in_channels=in_channels, out_channels=out_channels, modes1=self.in_res // 2 + 1, modes2=self.in_res // 2 + 1, up=up, down=down)
+            self.spec_conv1 = SpectralConv2d(in_channels=out_channels, out_channels=out_channels, modes1=self.out_res // 2 + 1, modes2=self.out_res // 2 + 1)
+        self.affine = Linear(in_features=emb_channels, out_features=out_channels*(2 if adaptive_scale else 1), **init)
+        self.norm1 = GroupNorm(num_channels=out_channels, eps=eps)
+
+        self.skip = None
+        if out_channels != in_channels or up or down:
+            kernel = 1 if resample_proj or out_channels!= in_channels else 0
+            self.skip = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=kernel, up=up, down=down, resample_filter=resample_filter, **init)
+
+        if self.num_heads:
+            self.norm2 = GroupNorm(num_channels=out_channels, eps=eps)
+            self.qkv = Conv2d(in_channels=out_channels, out_channels=out_channels*3, kernel=1, **(init_attn if init_attn is not None else init))
+            self.proj = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=1, **init_zero)
+
+    def run_convs(self, x, step):
+        if self.use_spatial and self.use_spectral:
+            if step == 0:
+                conv = self.conv0
+                spec_conv = self.spec_conv0
+            else:
+                conv = self.conv1
+                spec_conv = self.spec_conv1
+            x_sp = conv(x)
+            x_sc = spec_conv(x)
+            print(x.shape, x_sp.shape, x_sc.shape)
+            x = x_sp + x_sc
+        elif self.use_spatial:
+            conv = self.conv0 if step == 0 else self.conv1
+            x = conv(x)
+        elif self.use_spectral:
+            spec_conv = self.spec_conv0 if step == 0 else self.spec_conv1
+            x = spec_conv(x)
+        else:
+            raise ValueError("Neither spatial nor spectral convolution used")
+        return x
+
+    def forward(self, x, emb):
+        orig = x
+        x = self.run_convs(silu(self.norm0(x)), step=0)
+        
+        params = self.affine(emb).unsqueeze(2).unsqueeze(3).to(x.dtype)
+        if self.adaptive_scale:
+            scale, shift = params.chunk(chunks=2, dim=1)
+            x = silu(torch.addcmul(shift, self.norm1(x), scale + 1))
+        else:
+            x = silu(self.norm1(x.add_(params)))
+
+        x = self.run_convs(torch.nn.functional.dropout(x, p=self.dropout, training=self.training), step=1)
+        x = x.add_(self.skip(orig) if self.skip is not None else orig)
+        x = x * self.skip_scale
+
+        if self.num_heads:
+            q, k, v = self.qkv(self.norm2(x)).reshape(x.shape[0] * self.num_heads, x.shape[1] // self.num_heads, 3, -1).unbind(2)
+            w = AttentionOp.apply(q, k)
+            a = torch.einsum('nqk,nck->ncq', w, v)
+            x = self.proj(a.reshape(*x.shape)).add_(x)
+            x = x * self.skip_scale
+        return x
+
 #----------------------------------------------------------------------------
 # Timestep embedding used in the DDPM++ and ADM architectures.
 
@@ -219,6 +383,9 @@ class FourierEmbedding(torch.nn.Module):
         x = torch.cat([x.cos(), x.sin()], dim=1)
         return x
 
+
+#####################################UNet Architectures#########################################
+
 #----------------------------------------------------------------------------
 # Reimplementation of the DDPM++ and NCSN++ architectures from the paper
 # "Score-Based Generative Modeling through Stochastic Differential
@@ -247,6 +414,7 @@ class SongUNet(torch.nn.Module):
         encoder_type        = 'standard',   # Encoder architecture: 'standard' for DDPM++, 'residual' for NCSN++.
         decoder_type        = 'standard',   # Decoder architecture: 'standard' for both DDPM++ and NCSN++.
         resample_filter     = [1,1],        # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
+        mode                = "def",        # Run convs in def/fourier/dual mode
     ):
         assert embedding_type in ['fourier', 'positional']
         assert encoder_type in ['standard', 'skip', 'residual']
@@ -262,7 +430,7 @@ class SongUNet(torch.nn.Module):
         block_kwargs = dict(
             emb_channels=emb_channels, num_heads=1, dropout=dropout, skip_scale=np.sqrt(0.5), eps=1e-6,
             resample_filter=resample_filter, resample_proj=True, adaptive_scale=False,
-            init=init, init_zero=init_zero, init_attn=init_attn,
+            init=init, init_zero=init_zero, init_attn=init_attn, use_spatial="fourier"!=mode, use_spectral="def"!=mode,
         )
 
         # Mapping.
@@ -278,12 +446,13 @@ class SongUNet(torch.nn.Module):
         caux = in_channels
         for level, mult in enumerate(channel_mult):
             res = img_resolution >> level
+            in_res = 2 * res
             if level == 0:
                 cin = cout
                 cout = model_channels
                 self.enc[f'{res}x{res}_conv'] = Conv2d(in_channels=cin, out_channels=cout, kernel=3, **init)
             else:
-                self.enc[f'{res}x{res}_down'] = UNetBlock(in_channels=cout, out_channels=cout, down=True, **block_kwargs)
+                self.enc[f'{res}x{res}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, down=True, in_res=in_res, **block_kwargs)
                 if encoder_type == 'skip':
                     self.enc[f'{res}x{res}_aux_down'] = Conv2d(in_channels=caux, out_channels=caux, kernel=0, down=True, resample_filter=resample_filter)
                     self.enc[f'{res}x{res}_aux_skip'] = Conv2d(in_channels=caux, out_channels=cout, kernel=1, **init)
@@ -294,23 +463,24 @@ class SongUNet(torch.nn.Module):
                 cin = cout
                 cout = model_channels * mult
                 attn = (res in attn_resolutions)
-                self.enc[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=attn, **block_kwargs)
+                self.enc[f'{res}x{res}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, in_res=res, **block_kwargs)
         skips = [block.out_channels for name, block in self.enc.items() if 'aux' not in name]
 
         # Decoder.
         self.dec = torch.nn.ModuleDict()
         for level, mult in reversed(list(enumerate(channel_mult))):
             res = img_resolution >> level
+            in_res = res // 2
             if level == len(channel_mult) - 1:
-                self.dec[f'{res}x{res}_in0'] = UNetBlock(in_channels=cout, out_channels=cout, attention=True, **block_kwargs)
-                self.dec[f'{res}x{res}_in1'] = UNetBlock(in_channels=cout, out_channels=cout, **block_kwargs)
+                self.dec[f'{res}x{res}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, in_res=in_res, **block_kwargs)
+                self.dec[f'{res}x{res}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, in_res=res, **block_kwargs)
             else:
-                self.dec[f'{res}x{res}_up'] = UNetBlock(in_channels=cout, out_channels=cout, up=True, **block_kwargs)
+                self.dec[f'{res}x{res}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, in_res=in_res, **block_kwargs)
             for idx in range(num_blocks + 1):
                 cin = cout + skips.pop()
                 cout = model_channels * mult
                 attn = (idx == num_blocks and res in attn_resolutions)
-                self.dec[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=attn, **block_kwargs)
+                self.dec[f'{res}x{res}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, in_res=res, **block_kwargs)
             if decoder_type == 'skip' or level == 0:
                 if decoder_type == 'skip' and level < len(channel_mult) - 1:
                     self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=0, up=True, resample_filter=resample_filter)
@@ -342,7 +512,7 @@ class SongUNet(torch.nn.Module):
             elif 'aux_residual' in name:
                 x = skips[-1] = aux = (x + block(aux)) / np.sqrt(2)
             else:
-                x = block(x, emb) if isinstance(block, UNetBlock) else block(x)
+                x = block(x, emb) if isinstance(block, UNetBlock) or isinstance(block, DualUNetBlock) else block(x)
                 skips.append(x)
 
         # Decoder.
@@ -459,6 +629,8 @@ class DhariwalUNet(torch.nn.Module):
             x = block(x, emb)
         x = self.out_conv(silu(self.out_norm(x)))
         return x
+
+#####################################Preconditioning-Wrappers#####################################
 
 #----------------------------------------------------------------------------
 # Preconditioning corresponding to the variance preserving (VP) formulation
@@ -669,5 +841,3 @@ class EDMPrecond(torch.nn.Module):
 
     def round_sigma(self, sigma):
         return torch.as_tensor(sigma)
-
-#----------------------------------------------------------------------------

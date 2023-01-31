@@ -46,6 +46,7 @@ def parse_int_list(s):
 @click.option('--cond',          help='Train class-conditional model', metavar='BOOL',              type=bool, default=False, show_default=True)
 @click.option('--arch',          help='Network architecture', metavar='ddpmpp|ncsnpp|adm',          type=click.Choice(['ddpmpp', 'ncsnpp', 'adm']), default='ddpmpp', show_default=True)
 @click.option('--precond',       help='Preconditioning & loss function', metavar='vp|ve|edm',       type=click.Choice(['vp', 've', 'edm']), default='edm', show_default=True)
+@click.option('--mode',          help='Spatial/spectral modes to use', metavar='def|fourier|dual',  type=click.Choice(['def', 'fourier', 'dual']), default='def', show_default=True)
 
 # Hyperparameters.
 @click.option('--duration',      help='Training duration', metavar='MIMG',                          type=click.FloatRange(min=0, min_open=True), default=200, show_default=True)
@@ -122,6 +123,8 @@ def main(**kwargs):
     else:
         assert opts.arch == 'adm'
         c.network_kwargs.update(model_type='DhariwalUNet', model_channels=192, channel_mult=[1,2,3,4])
+
+    c.network_kwargs.update(mode=opts.mode)
 
     # Preconditioning & loss function.
     if opts.precond == 'vp':

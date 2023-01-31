@@ -295,6 +295,8 @@ def main(network_pkl, outdir, subdirs, seeds, class_idx, max_batch_size, device=
 
         # Save images.
         images_np = (images * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
+        #os.makedirs(outdir, exist_ok=True)
+        #np.save(os.path.join(outdir, "batch_{}".format(batch_seeds[0])), images_np)
         for seed, image_np in zip(batch_seeds, images_np):
             image_dir = os.path.join(outdir, f'{seed-seed%1000:06d}') if subdirs else outdir
             os.makedirs(image_dir, exist_ok=True)
