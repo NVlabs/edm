@@ -94,7 +94,7 @@ class Conv2d(torch.nn.Module):
 #--------------------------------------------------------------
 # fourier layer
 class SpectralConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=True):
+    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=False):
         super(SpectralConv2d, self).__init__()
 
         """
@@ -129,15 +129,75 @@ class SpectralConv2d(nn.Module):
 
         # Multiply relevant Fourier modes
         out_ft = torch.zeros((batchsize, self.out_channels,  x.size(-2), x.size(-1)//2 + 1, 2), device=x.device)
-        # I guess we are implicitly taking the lowest and highest modes?
-        out_ft[:, :, :self.modes1, :self.modes2] = \
-            self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
-        out_ft[:, :, -self.modes1:, :self.modes2] = \
-            self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
+        out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
+        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
         x = torch.fft.irfft2(out_ft, s=(x.size(-2), x.size(-1)))
+
+        # Up/Down sampling
+        if self.down:
+            size = x.shape[-2:]
+            size = [s // 2 for s in size]
+            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
+        elif self.up:
+            size = x.shape[-2:]
+            size = [2 * s for s in size]
+            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
+        return x
+
+#--------------------------------------------------------------
+# efficient fourier layey. Leveraging fourier up/down sampling. maybe not worth it if just learning constant
+class EfficientSpectralConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=False):
+        super(SpectralConv2d, self).__init__()
+
+        """
+        2D Fourier layer. It does FFT, linear transform, and Inverse FFT.
+        """
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.down = down
+        self.up = up
+
+        self.verbose = verbose
+
+        self.conv_abs = nn.Conv2d(in_channels, out_channels, 1, 1)
+        self.conv_pha = nn.Conv2d(in_channels, out_channels, 1, 1)
+
+    # Downsampling by truncating fourier modes?
+    def forward(self, x):
+        print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
+        batchsize, C, H, W = x.shape
+        #Compute Fourier coeffcients up to factor of e^(- something constant)
+        x_ft = torch.fft.fft2(x) # shape: (batchsize, C, H, W)
+        x_abs = torch.abs(x_ft)
+        x_pha = torch.angle(x_ft)
+
+        # Similar to Deep Fourier Upsampling: https://github.com/manman1995/Deep-Fourier-Upsampling/blob/main/Fourier-Upsampling.py
+        x_abs_out = self.conv_abs(x_abs)  # shape: (batchsize, C, H, W)
+        x_pha_out = self.conv_pha(x_pha)
+
+        if self.up:
+
+            x_abs_zero = torch.zeros((batchsize, C, 2*H, 2*W)).cuda()
+            x_pha_zero = torch.zeros((batchsize, C, 2*H, 2*W)).cuda()
+
+            take_H = H // 2 + 1
+            take_W = W // 2 + 1
+            x_abs_zero[:, :, :take_H, :take_W] = x_abs_out[:, :, :take_H, :take_W]
+            x_abs_zero[:, :, :take_H, -take_W:] = x_abs_out[:, :, :take_H, -take_W:]
+            x_abs_zero[:, :, -take_H:, :take_W] = x_abs_out[:, :, -take_H:, :take_W]
+            x_abs_zero[:, :, -take_H:, -take_W:] = x_abs_out[:, :, -take_H:, -take_W:]
+
+
+
+        else: 
+            x = torch.complex(x_abs_out * torch.cos(x_pha_out), x_abs_out * torch.sin(x_pha_out))
+
+        
 
         # Up/Down sampling
         if self.down:
@@ -288,10 +348,10 @@ class DualUNetBlock(torch.nn.Module):
             self.conv0 = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init)
             self.conv1 = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=3, **init_zero)
         if self.use_spectral:
-            # nmodes should basically always be N // 2 + 1
+            # nmodes should always be most in_res // 2 + 1. However usually much smaller.
             assert in_res > 0
-            self.spec_conv0 = SpectralConv2d(in_channels=in_channels, out_channels=out_channels, modes1=self.in_res // 2 + 1, modes2=self.in_res // 2 + 1, up=up, down=down)
-            self.spec_conv1 = SpectralConv2d(in_channels=out_channels, out_channels=out_channels, modes1=self.out_res // 2 + 1, modes2=self.out_res // 2 + 1)
+            self.spec_conv0 = SpectralConv2d(in_channels=in_channels, out_channels=out_channels, modes1=max(self.in_res // 16 + 1, 3), modes2=max(self.in_res // 16 + 1, 3), up=up, down=down)
+            self.spec_conv1 = SpectralConv2d(in_channels=out_channels, out_channels=out_channels, modes1=max(self.in_res // 16 + 1, 3), modes2=max(self.in_res // 16 + 1, 3))
         self.affine = Linear(in_features=emb_channels, out_features=out_channels*(2 if adaptive_scale else 1), **init)
         self.norm1 = GroupNorm(num_channels=out_channels, eps=eps)
 
@@ -315,7 +375,7 @@ class DualUNetBlock(torch.nn.Module):
                 spec_conv = self.spec_conv1
             x_sp = conv(x)
             x_sc = spec_conv(x)
-            print(x.shape, x_sp.shape, x_sc.shape)
+            #print(x.shape, x_sp.shape, x_sc.shape)
             x = x_sp + x_sc
         elif self.use_spatial:
             conv = self.conv0 if step == 0 else self.conv1

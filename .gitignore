@@ -3,8 +3,10 @@ downloads/
 training-runs/
 *.pkl
 out/
+*.png
 *.pt
 datasets/
 *.zip
 __pycache__/
 *.pyc
+*_out/
