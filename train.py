@@ -115,17 +115,10 @@ def main(**kwargs):
         raise click.ClickException(f'--data: {err}')
 
     # Network architecture.
-    if opts.arch == 'ddpmpp':
-        c.network_kwargs.update(model_type='SongUNet', embedding_type='positional', encoder_type='standard', decoder_type='standard')
-        c.network_kwargs.update(channel_mult_noise=1, resample_filter=[1,1], model_channels=128, channel_mult=[2,2,2])
-        if opts.n_res_blocks:
-            c.network_kwargs.update(num_blocks=opts.n_res_blocks)
-    elif opts.arch == 'ncsnpp':
-        c.network_kwargs.update(model_type='SongUNet', embedding_type='fourier', encoder_type='residual', decoder_type='standard')
-        c.network_kwargs.update(channel_mult_noise=2, resample_filter=[1,3,3,1], model_channels=128, channel_mult=[2,2,2])
-    else:
-        assert opts.arch == 'adm'
-        c.network_kwargs.update(model_type='DhariwalUNet', model_channels=192, channel_mult=[1,2,3,4])
+    c.network_kwargs.update(model_type='DualUNet', embedding_type='positional', encoder_type='standard', decoder_type='standard')
+    c.network_kwargs.update(channel_mult_noise=1, resample_filter=[1,1], model_channels=128, channel_mult=[2,2,2])
+    if opts.n_res_blocks:
+        c.network_kwargs.update(num_blocks=opts.n_res_blocks)
 
     c.network_kwargs.update(mode=opts.mode)
 

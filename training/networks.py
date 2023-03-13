@@ -122,93 +122,56 @@ class SpectralConv2d(nn.Module):
     # Downsampling by truncating fourier modes?
     def forward(self, x):
         print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
-        batchsize = x.shape[0]
+        batchsize, c, h, w = x.shape
+        if self.down:
+            out_h = h // 2
+            out_w = w // 2
+        elif self.up:
+            out_h = 2 * h
+            out_w = 2 * w
+        else:
+            out_h = h
+            out_w = w
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
         x_ft = torch.view_as_real(x_ft)
 
         # Multiply relevant Fourier modes
-        out_ft = torch.zeros((batchsize, self.out_channels,  x.size(-2), x.size(-1)//2 + 1, 2), device=x.device)
+        out_ft = torch.zeros((batchsize, self.out_channels,  out_h, out_w//2 + 1, 2), device=x.device)
+        print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
         out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
-        x = torch.fft.irfft2(out_ft, s=(x.size(-2), x.size(-1)))
-
-        # Up/Down sampling
-        if self.down:
-            size = x.shape[-2:]
-            size = [s // 2 for s in size]
-            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
-        elif self.up:
-            size = x.shape[-2:]
-            size = [2 * s for s in size]
-            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
+        x = torch.fft.irfft2(out_ft, s=(out_h, out_w))
+        print("Spectral out x shape: {}".format(x.shape)) if self.verbose else None
         return x
 
-#--------------------------------------------------------------
-# efficient fourier layey. Leveraging fourier up/down sampling. maybe not worth it if just learning constant
-class EfficientSpectralConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=False):
-        super(SpectralConv2d, self).__init__()
 
-        """
-        2D Fourier layer. It does FFT, linear transform, and Inverse FFT.
-        """
-
+#---------------------------------------------------------------------------
+class DualConv(nn.Module):
+    def __init__(self, 
+        in_channels, out_channels, kernel, 
+        modes1, modes2,
+        bias=True, up=False, down=False, resample_filter=[1,1], fused_resample=False, init_mode='kaiming_normal', init_weight=1, init_bias=0, 
+        use_spatial=True, use_spectral=True, verbose=False):
+        super(DualConv, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.down = down
-        self.up = up
+        self.kernel = kernel
+        self.modes1 = modes1
+        self.modes2 = modes2
+        self.use_spatial = use_spatial
+        self.use_spectral = use_spectral
+        self.spatial_conv = Conv2d(in_channels, out_channels, kernel, bias, up, down, 
+                                   resample_filter, fused_resample, init_mode, init_weight, init_bias) if use_spatial else None
+        self.spectral_conv = SpectralConv2d(in_channels, out_channels, modes1, modes2, up, down, verbose) if use_spectral else None
 
-        self.verbose = verbose
-
-        self.conv_abs = nn.Conv2d(in_channels, out_channels, 1, 1)
-        self.conv_pha = nn.Conv2d(in_channels, out_channels, 1, 1)
-
-    # Downsampling by truncating fourier modes?
     def forward(self, x):
-        print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
-        batchsize, C, H, W = x.shape
-        #Compute Fourier coeffcients up to factor of e^(- something constant)
-        x_ft = torch.fft.fft2(x) # shape: (batchsize, C, H, W)
-        x_abs = torch.abs(x_ft)
-        x_pha = torch.angle(x_ft)
-
-        # Similar to Deep Fourier Upsampling: https://github.com/manman1995/Deep-Fourier-Upsampling/blob/main/Fourier-Upsampling.py
-        x_abs_out = self.conv_abs(x_abs)  # shape: (batchsize, C, H, W)
-        x_pha_out = self.conv_pha(x_pha)
-
-        if self.up:
-
-            x_abs_zero = torch.zeros((batchsize, C, 2*H, 2*W)).cuda()
-            x_pha_zero = torch.zeros((batchsize, C, 2*H, 2*W)).cuda()
-
-            take_H = H // 2 + 1
-            take_W = W // 2 + 1
-            x_abs_zero[:, :, :take_H, :take_W] = x_abs_out[:, :, :take_H, :take_W]
-            x_abs_zero[:, :, :take_H, -take_W:] = x_abs_out[:, :, :take_H, -take_W:]
-            x_abs_zero[:, :, -take_H:, :take_W] = x_abs_out[:, :, -take_H:, :take_W]
-            x_abs_zero[:, :, -take_H:, -take_W:] = x_abs_out[:, :, -take_H:, -take_W:]
-
-
-
-        else: 
-            x = torch.complex(x_abs_out * torch.cos(x_pha_out), x_abs_out * torch.sin(x_pha_out))
-
-        
-
-        # Up/Down sampling
-        if self.down:
-            size = x.shape[-2:]
-            size = [s // 2 for s in size]
-            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
-        elif self.up:
-            size = x.shape[-2:]
-            size = [2 * s for s in size]
-            x = torch.nn.functional.interpolate(x, size=size, mode="bicubic")
-        return x
+        spatial_out = self.spatial_conv(x) if self.use_spatial else 0
+        spectral_out = self.spectral_conv(x) if self.use_spectral else 0
+        return spatial_out + spectral_out
 
 #----------------------------------------------------------------------------
 # Group normalization.
@@ -246,18 +209,22 @@ class AttentionOp(torch.autograd.Function):
         dk = torch.einsum('ncq,nqk->nck', q.to(torch.float32), db).to(k.dtype) / np.sqrt(k.shape[1])
         return dq, dk
 
+
 #----------------------------------------------------------------------------
-# Unified U-Net block with optional up/downsampling and self-attention.
+# Unified DualFNO U-Net block with optional up/downsampling and self-attention.
 # Represents the union of all features employed by the DDPM++, NCSN++, and
 # ADM architectures.
 
 @persistence.persistent_class
-class UNetBlock(torch.nn.Module):
+class DualUNetBlock(torch.nn.Module):
     def __init__(self,
-        in_channels, out_channels, emb_channels, up=False, down=False, attention=False,
+        in_channels, out_channels, emb_channels, 
+        modes1, modes2,
+        up=False, down=False, attention=False,
         num_heads=None, channels_per_head=64, dropout=0, skip_scale=1, eps=1e-5,
         resample_filter=[1,1], resample_proj=False, adaptive_scale=True,
-        init=dict(), init_zero=dict(init_weight=0), init_attn=None,
+        init=dict(), init_zero=dict(init_weight=0), init_attn=None, 
+        use_spatial=True, use_spectral=True, verbose=False,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -267,12 +234,21 @@ class UNetBlock(torch.nn.Module):
         self.dropout = dropout
         self.skip_scale = skip_scale
         self.adaptive_scale = adaptive_scale
+        self.use_spatial = use_spatial
+        self.use_spectral = use_spectral
+        self.verbose = verbose
+        self.down = down
+        self.up = up
+
 
         self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
-        self.conv0 = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init)
+        self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init,
+                              modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
+        self.conv1 = DualConv(in_channels=out_channels, out_channels=out_channels, kernel=3, resample_filter=resample_filter, **init_zero,
+                              modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
+
         self.affine = Linear(in_features=emb_channels, out_features=out_channels*(2 if adaptive_scale else 1), **init)
         self.norm1 = GroupNorm(num_channels=out_channels, eps=eps)
-        self.conv1 = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=3, **init_zero)
 
         self.skip = None
         if out_channels != in_channels or up or down:
@@ -287,109 +263,6 @@ class UNetBlock(torch.nn.Module):
     def forward(self, x, emb):
         orig = x
         x = self.conv0(silu(self.norm0(x)))
-
-        params = self.affine(emb).unsqueeze(2).unsqueeze(3).to(x.dtype)
-        if self.adaptive_scale:
-            scale, shift = params.chunk(chunks=2, dim=1)
-            x = silu(torch.addcmul(shift, self.norm1(x), scale + 1))
-        else:
-            x = silu(self.norm1(x.add_(params)))
-
-        x = self.conv1(torch.nn.functional.dropout(x, p=self.dropout, training=self.training))
-        x = x.add_(self.skip(orig) if self.skip is not None else orig)
-        x = x * self.skip_scale
-
-        if self.num_heads:
-            q, k, v = self.qkv(self.norm2(x)).reshape(x.shape[0] * self.num_heads, x.shape[1] // self.num_heads, 3, -1).unbind(2)
-            w = AttentionOp.apply(q, k)
-            a = torch.einsum('nqk,nck->ncq', w, v)
-            x = self.proj(a.reshape(*x.shape)).add_(x)
-            x = x * self.skip_scale
-        return x
-
-
-#----------------------------------------------------------------------------
-# Unified DualFNO U-Net block with optional up/downsampling and self-attention.
-# Represents the union of all features employed by the DDPM++, NCSN++, and
-# ADM architectures.
-
-@persistence.persistent_class
-class DualUNetBlock(torch.nn.Module):
-    def __init__(self,
-        in_channels, out_channels, emb_channels, up=False, down=False, attention=False,
-        num_heads=None, channels_per_head=64, dropout=0, skip_scale=1, eps=1e-5,
-        resample_filter=[1,1], resample_proj=False, adaptive_scale=True,
-        init=dict(), init_zero=dict(init_weight=0), init_attn=None, 
-        use_spatial=True, use_spectral=False, in_res=-1, verbose=False,
-    ):
-        super().__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.emb_channels = emb_channels
-        self.num_heads = 0 if not attention else num_heads if num_heads is not None else out_channels // channels_per_head
-        self.dropout = dropout
-        self.skip_scale = skip_scale
-        self.adaptive_scale = adaptive_scale
-        self.use_spatial = use_spatial
-        self.use_spectral = use_spectral
-        self.verbose = verbose
-        self.in_res = in_res
-        self.out_res = in_res
-        self.down = down
-        self.up = up
-        if self.up:
-            self.out_res = 2 * in_res
-        elif self.down:
-            self.out_res = in_res // 2
-        #print("Spatial: ", self.use_spatial, "Spectral: ", self.use_spectral) if verbose else None
-
-        self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
-        if self.use_spatial:
-            self.conv0 = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init)
-            self.conv1 = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=3, **init_zero)
-        if self.use_spectral:
-            # nmodes should always be most in_res // 2 + 1. However usually much smaller.
-            assert in_res > 0
-            self.spec_conv0 = SpectralConv2d(in_channels=in_channels, out_channels=out_channels, modes1=max(self.in_res // 16 + 1, 3), modes2=max(self.in_res // 16 + 1, 3), up=up, down=down)
-            self.spec_conv1 = SpectralConv2d(in_channels=out_channels, out_channels=out_channels, modes1=max(self.in_res // 16 + 1, 3), modes2=max(self.in_res // 16 + 1, 3))
-        self.affine = Linear(in_features=emb_channels, out_features=out_channels*(2 if adaptive_scale else 1), **init)
-        self.norm1 = GroupNorm(num_channels=out_channels, eps=eps)
-
-        self.skip = None
-        if out_channels != in_channels or up or down:
-            kernel = 1 if resample_proj or out_channels!= in_channels else 0
-            self.skip = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=kernel, up=up, down=down, resample_filter=resample_filter, **init)
-
-        if self.num_heads:
-            self.norm2 = GroupNorm(num_channels=out_channels, eps=eps)
-            self.qkv = Conv2d(in_channels=out_channels, out_channels=out_channels*3, kernel=1, **(init_attn if init_attn is not None else init))
-            self.proj = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=1, **init_zero)
-
-    def run_convs(self, x, step):
-        if self.use_spatial and self.use_spectral:
-            if step == 0:
-                conv = self.conv0
-                spec_conv = self.spec_conv0
-            else:
-                conv = self.conv1
-                spec_conv = self.spec_conv1
-            x_sp = conv(x)
-            x_sc = spec_conv(x)
-            #print(x.shape, x_sp.shape, x_sc.shape)
-            x = x_sp + x_sc
-        elif self.use_spatial:
-            conv = self.conv0 if step == 0 else self.conv1
-            x = conv(x)
-        elif self.use_spectral:
-            spec_conv = self.spec_conv0 if step == 0 else self.spec_conv1
-            x = spec_conv(x)
-        else:
-            raise ValueError("Neither spatial nor spectral convolution used")
-        return x
-
-    def forward(self, x, emb):
-        orig = x
-        x = self.run_convs(silu(self.norm0(x)), step=0)
         
         params = self.affine(emb).unsqueeze(2).unsqueeze(3).to(x.dtype)
         if self.adaptive_scale:
@@ -398,7 +271,7 @@ class DualUNetBlock(torch.nn.Module):
         else:
             x = silu(self.norm1(x.add_(params)))
 
-        x = self.run_convs(torch.nn.functional.dropout(x, p=self.dropout, training=self.training), step=1)
+        x = self.conv1(torch.nn.functional.dropout(x, p=self.dropout, training=self.training))
         x = x.add_(self.skip(orig) if self.skip is not None else orig)
         x = x * self.skip_scale
 
@@ -447,15 +320,10 @@ class FourierEmbedding(torch.nn.Module):
 #####################################UNet Architectures#########################################
 
 #----------------------------------------------------------------------------
-# Reimplementation of the DDPM++ and NCSN++ architectures from the paper
-# "Score-Based Generative Modeling through Stochastic Differential
-# Equations". Equivalent to the original implementation by Song et al.,
-# available at https://github.com/yang-song/score_sde_pytorch
 
 @persistence.persistent_class
-class SongUNet(torch.nn.Module):
+class DualUNet(torch.nn.Module):
     def __init__(self,
-        img_resolution,                     # Image resolution at input/output.
         in_channels,                        # Number of color channels at input.
         out_channels,                       # Number of color channels at output.
         label_dim           = 0,            # Number of class labels, 0 = unconditional.
@@ -465,7 +333,7 @@ class SongUNet(torch.nn.Module):
         channel_mult        = [1,2,2,2],    # Per-resolution multipliers for the number of channels.
         channel_mult_emb    = 4,            # Multiplier for the dimensionality of the embedding vector.
         num_blocks          = 4,            # Number of residual blocks per resolution.
-        attn_resolutions    = [16],         # List of resolutions with self-attention.
+        attn_levels         = [1],         # List of resolutions with self-attention.
         dropout             = 0.10,         # Dropout probability of intermediate activations.
         label_dropout       = 0,            # Dropout probability of class labels for classifier-free guidance.
 
@@ -474,7 +342,10 @@ class SongUNet(torch.nn.Module):
         encoder_type        = 'standard',   # Encoder architecture: 'standard' for DDPM++, 'residual' for NCSN++.
         decoder_type        = 'standard',   # Decoder architecture: 'standard' for both DDPM++ and NCSN++.
         resample_filter     = [1,1],        # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
-        mode                = "def",        # Run convs in def/fourier/dual mode
+        mode                = "dual",        # Run convs in def/fourier/dual mode
+        modes1              = 4,           # Number of fourier modes to take in first dim
+        modes2              = 3,           # Number of fourier modes to take in second dim
+        verbose             = False,         # For print debugging
     ):
         assert embedding_type in ['fourier', 'positional']
         assert encoder_type in ['standard', 'skip', 'residual']
@@ -482,6 +353,7 @@ class SongUNet(torch.nn.Module):
 
         super().__init__()
         self.label_dropout = label_dropout
+        self.verbose = verbose
         emb_channels = model_channels * channel_mult_emb
         noise_channels = model_channels * channel_mult_noise
         init = dict(init_mode='xavier_uniform')
@@ -505,50 +377,39 @@ class SongUNet(torch.nn.Module):
         cout = in_channels
         caux = in_channels
         for level, mult in enumerate(channel_mult):
-            res = img_resolution >> level
-            in_res = 2 * res
             if level == 0:
                 cin = cout
                 cout = model_channels
-                self.enc[f'{res}x{res}_conv'] = Conv2d(in_channels=cin, out_channels=cout, kernel=3, **init)
+                self.enc[f'{level}_conv'] = DualConv(in_channels=cin, out_channels=cout, kernel=3, modes1=modes1, modes2=modes2, **init)
             else:
-                self.enc[f'{res}x{res}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, down=True, in_res=in_res, **block_kwargs)
-                if encoder_type == 'skip':
-                    self.enc[f'{res}x{res}_aux_down'] = Conv2d(in_channels=caux, out_channels=caux, kernel=0, down=True, resample_filter=resample_filter)
-                    self.enc[f'{res}x{res}_aux_skip'] = Conv2d(in_channels=caux, out_channels=cout, kernel=1, **init)
-                if encoder_type == 'residual':
-                    self.enc[f'{res}x{res}_aux_residual'] = Conv2d(in_channels=caux, out_channels=cout, kernel=3, down=True, resample_filter=resample_filter, fused_resample=True, **init)
-                    caux = cout
+                self.enc[f'{level}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, down=True, modes1=modes1, modes2=modes2, **block_kwargs)
             for idx in range(num_blocks):
                 cin = cout
                 cout = model_channels * mult
-                attn = (res in attn_resolutions)
-                self.enc[f'{res}x{res}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, in_res=res, **block_kwargs)
+                attn = (level in attn_levels)
+                self.enc[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
         skips = [block.out_channels for name, block in self.enc.items() if 'aux' not in name]
 
         # Decoder.
         self.dec = torch.nn.ModuleDict()
         for level, mult in reversed(list(enumerate(channel_mult))):
-            res = img_resolution >> level
-            in_res = res // 2
             if level == len(channel_mult) - 1:
-                self.dec[f'{res}x{res}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, in_res=in_res, **block_kwargs)
-                self.dec[f'{res}x{res}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, in_res=res, **block_kwargs)
+                self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, modes1=modes1, modes2=modes2, **block_kwargs)
+                self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, modes1=modes1, modes2=modes2, **block_kwargs)
             else:
-                self.dec[f'{res}x{res}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, in_res=in_res, **block_kwargs)
+                self.dec[f'{level}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, modes1=modes1, modes2=modes2, **block_kwargs)
             for idx in range(num_blocks + 1):
                 cin = cout + skips.pop()
                 cout = model_channels * mult
-                attn = (idx == num_blocks and res in attn_resolutions)
-                self.dec[f'{res}x{res}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, in_res=res, **block_kwargs)
-            if decoder_type == 'skip' or level == 0:
-                if decoder_type == 'skip' and level < len(channel_mult) - 1:
-                    self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=0, up=True, resample_filter=resample_filter)
-                self.dec[f'{res}x{res}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
-                self.dec[f'{res}x{res}_aux_conv'] = Conv2d(in_channels=cout, out_channels=out_channels, kernel=3, **init_zero)
+                attn = (idx == num_blocks and level in attn_levels)
+                self.dec[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
+            if level == 0:
+                self.dec[f'{level}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
+                self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, modes1=modes1, modes2=modes2, **init_zero)
 
     def forward(self, x, noise_labels, class_labels, augment_labels=None):
         # Mapping.
+        print("Input shape: {}".format(x.shape)) if self.verbose else None
         emb = self.map_noise(noise_labels)
         emb = emb.reshape(emb.shape[0], 2, -1).flip(1).reshape(*emb.shape) # swap sin/cos
         if self.map_label is not None:
@@ -565,23 +426,15 @@ class SongUNet(torch.nn.Module):
         skips = []
         aux = x
         for name, block in self.enc.items():
-            if 'aux_down' in name:
-                aux = block(aux)
-            elif 'aux_skip' in name:
-                x = skips[-1] = x + block(aux)
-            elif 'aux_residual' in name:
-                x = skips[-1] = aux = (x + block(aux)) / np.sqrt(2)
-            else:
-                x = block(x, emb) if isinstance(block, UNetBlock) or isinstance(block, DualUNetBlock) else block(x)
-                skips.append(x)
+            x = block(x, emb) if isinstance(block, DualUNetBlock) else block(x)
+            print("Out shape at block {}: {}".format(name, x.shape)) if self.verbose else None
+            skips.append(x)
 
         # Decoder.
         aux = None
         tmp = None
         for name, block in self.dec.items():
-            if 'aux_up' in name:
-                aux = block(aux)
-            elif 'aux_norm' in name:
+            if 'aux_norm' in name:
                 tmp = block(x)
             elif 'aux_conv' in name:
                 tmp = block(silu(tmp))
@@ -592,269 +445,8 @@ class SongUNet(torch.nn.Module):
                 x = block(x, emb)
         return aux
 
-#----------------------------------------------------------------------------
-# Reimplementation of the ADM architecture from the paper
-# "Diffusion Models Beat GANS on Image Synthesis". Equivalent to the
-# original implementation by Dhariwal and Nichol, available at
-# https://github.com/openai/guided-diffusion
-
-@persistence.persistent_class
-class DhariwalUNet(torch.nn.Module):
-    def __init__(self,
-        img_resolution,                     # Image resolution at input/output.
-        in_channels,                        # Number of color channels at input.
-        out_channels,                       # Number of color channels at output.
-        label_dim           = 0,            # Number of class labels, 0 = unconditional.
-        augment_dim         = 0,            # Augmentation label dimensionality, 0 = no augmentation.
-
-        model_channels      = 192,          # Base multiplier for the number of channels.
-        channel_mult        = [1,2,3,4],    # Per-resolution multipliers for the number of channels.
-        channel_mult_emb    = 4,            # Multiplier for the dimensionality of the embedding vector.
-        num_blocks          = 3,            # Number of residual blocks per resolution.
-        attn_resolutions    = [32,16,8],    # List of resolutions with self-attention.
-        dropout             = 0.10,         # List of resolutions with self-attention.
-        label_dropout       = 0,            # Dropout probability of class labels for classifier-free guidance.
-    ):
-        super().__init__()
-        self.label_dropout = label_dropout
-        emb_channels = model_channels * channel_mult_emb
-        init = dict(init_mode='kaiming_uniform', init_weight=np.sqrt(1/3), init_bias=np.sqrt(1/3))
-        init_zero = dict(init_mode='kaiming_uniform', init_weight=0, init_bias=0)
-        block_kwargs = dict(emb_channels=emb_channels, channels_per_head=64, dropout=dropout, init=init, init_zero=init_zero)
-
-        # Mapping.
-        self.map_noise = PositionalEmbedding(num_channels=model_channels)
-        self.map_augment = Linear(in_features=augment_dim, out_features=model_channels, bias=False, **init_zero) if augment_dim else None
-        self.map_layer0 = Linear(in_features=model_channels, out_features=emb_channels, **init)
-        self.map_layer1 = Linear(in_features=emb_channels, out_features=emb_channels, **init)
-        self.map_label = Linear(in_features=label_dim, out_features=emb_channels, bias=False, init_mode='kaiming_normal', init_weight=np.sqrt(label_dim)) if label_dim else None
-
-        # Encoder.
-        self.enc = torch.nn.ModuleDict()
-        cout = in_channels
-        for level, mult in enumerate(channel_mult):
-            res = img_resolution >> level
-            if level == 0:
-                cin = cout
-                cout = model_channels * mult
-                self.enc[f'{res}x{res}_conv'] = Conv2d(in_channels=cin, out_channels=cout, kernel=3, **init)
-            else:
-                self.enc[f'{res}x{res}_down'] = UNetBlock(in_channels=cout, out_channels=cout, down=True, **block_kwargs)
-            for idx in range(num_blocks):
-                cin = cout
-                cout = model_channels * mult
-                self.enc[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=(res in attn_resolutions), **block_kwargs)
-        skips = [block.out_channels for block in self.enc.values()]
-
-        # Decoder.
-        self.dec = torch.nn.ModuleDict()
-        for level, mult in reversed(list(enumerate(channel_mult))):
-            res = img_resolution >> level
-            if level == len(channel_mult) - 1:
-                self.dec[f'{res}x{res}_in0'] = UNetBlock(in_channels=cout, out_channels=cout, attention=True, **block_kwargs)
-                self.dec[f'{res}x{res}_in1'] = UNetBlock(in_channels=cout, out_channels=cout, **block_kwargs)
-            else:
-                self.dec[f'{res}x{res}_up'] = UNetBlock(in_channels=cout, out_channels=cout, up=True, **block_kwargs)
-            for idx in range(num_blocks + 1):
-                cin = cout + skips.pop()
-                cout = model_channels * mult
-                self.dec[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=(res in attn_resolutions), **block_kwargs)
-        self.out_norm = GroupNorm(num_channels=cout)
-        self.out_conv = Conv2d(in_channels=cout, out_channels=out_channels, kernel=3, **init_zero)
-
-    def forward(self, x, noise_labels, class_labels, augment_labels=None):
-        # Mapping.
-        emb = self.map_noise(noise_labels)
-        if self.map_augment is not None and augment_labels is not None:
-            emb = emb + self.map_augment(augment_labels)
-        emb = silu(self.map_layer0(emb))
-        emb = self.map_layer1(emb)
-        if self.map_label is not None:
-            tmp = class_labels
-            if self.training and self.label_dropout:
-                tmp = tmp * (torch.rand([x.shape[0], 1], device=x.device) >= self.label_dropout).to(tmp.dtype)
-            emb = emb + self.map_label(tmp)
-        emb = silu(emb)
-
-        # Encoder.
-        skips = []
-        for block in self.enc.values():
-            x = block(x, emb) if isinstance(block, UNetBlock) else block(x)
-            skips.append(x)
-
-        # Decoder.
-        for block in self.dec.values():
-            if x.shape[1] != block.in_channels:
-                x = torch.cat([x, skips.pop()], dim=1)
-            x = block(x, emb)
-        x = self.out_conv(silu(self.out_norm(x)))
-        return x
 
 #####################################Preconditioning-Wrappers#####################################
-
-#----------------------------------------------------------------------------
-# Preconditioning corresponding to the variance preserving (VP) formulation
-# from the paper "Score-Based Generative Modeling through Stochastic
-# Differential Equations".
-
-@persistence.persistent_class
-class VPPrecond(torch.nn.Module):
-    def __init__(self,
-        img_resolution,                 # Image resolution.
-        img_channels,                   # Number of color channels.
-        label_dim       = 0,            # Number of class labels, 0 = unconditional.
-        use_fp16        = False,        # Execute the underlying model at FP16 precision?
-        beta_d          = 19.9,         # Extent of the noise level schedule.
-        beta_min        = 0.1,          # Initial slope of the noise level schedule.
-        M               = 1000,         # Original number of timesteps in the DDPM formulation.
-        epsilon_t       = 1e-5,         # Minimum t-value used during training.
-        model_type      = 'SongUNet',   # Class name of the underlying model.
-        **model_kwargs,                 # Keyword arguments for the underlying model.
-    ):
-        super().__init__()
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.label_dim = label_dim
-        self.use_fp16 = use_fp16
-        self.beta_d = beta_d
-        self.beta_min = beta_min
-        self.M = M
-        self.epsilon_t = epsilon_t
-        self.sigma_min = float(self.sigma(epsilon_t))
-        self.sigma_max = float(self.sigma(1))
-        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
-
-    def forward(self, x, sigma, class_labels=None, force_fp32=False, **model_kwargs):
-        x = x.to(torch.float32)
-        sigma = sigma.to(torch.float32).reshape(-1, 1, 1, 1)
-        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
-        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
-
-        c_skip = 1
-        c_out = -sigma
-        c_in = 1 / (sigma ** 2 + 1).sqrt()
-        c_noise = (self.M - 1) * self.sigma_inv(sigma)
-
-        F_x = self.model((c_in * x).to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
-        assert F_x.dtype == dtype
-        D_x = c_skip * x + c_out * F_x.to(torch.float32)
-        return D_x
-
-    def sigma(self, t):
-        t = torch.as_tensor(t)
-        return ((0.5 * self.beta_d * (t ** 2) + self.beta_min * t).exp() - 1).sqrt()
-
-    def sigma_inv(self, sigma):
-        sigma = torch.as_tensor(sigma)
-        return ((self.beta_min ** 2 + 2 * self.beta_d * (1 + sigma ** 2).log()).sqrt() - self.beta_min) / self.beta_d
-
-    def round_sigma(self, sigma):
-        return torch.as_tensor(sigma)
-
-#----------------------------------------------------------------------------
-# Preconditioning corresponding to the variance exploding (VE) formulation
-# from the paper "Score-Based Generative Modeling through Stochastic
-# Differential Equations".
-
-@persistence.persistent_class
-class VEPrecond(torch.nn.Module):
-    def __init__(self,
-        img_resolution,                 # Image resolution.
-        img_channels,                   # Number of color channels.
-        label_dim       = 0,            # Number of class labels, 0 = unconditional.
-        use_fp16        = False,        # Execute the underlying model at FP16 precision?
-        sigma_min       = 0.02,         # Minimum supported noise level.
-        sigma_max       = 100,          # Maximum supported noise level.
-        model_type      = 'SongUNet',   # Class name of the underlying model.
-        **model_kwargs,                 # Keyword arguments for the underlying model.
-    ):
-        super().__init__()
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.label_dim = label_dim
-        self.use_fp16 = use_fp16
-        self.sigma_min = sigma_min
-        self.sigma_max = sigma_max
-        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
-
-    def forward(self, x, sigma, class_labels=None, force_fp32=False, **model_kwargs):
-        x = x.to(torch.float32)
-        sigma = sigma.to(torch.float32).reshape(-1, 1, 1, 1)
-        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
-        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
-
-        c_skip = 1
-        c_out = sigma
-        c_in = 1
-        c_noise = (0.5 * sigma).log()
-
-        F_x = self.model((c_in * x).to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
-        assert F_x.dtype == dtype
-        D_x = c_skip * x + c_out * F_x.to(torch.float32)
-        return D_x
-
-    def round_sigma(self, sigma):
-        return torch.as_tensor(sigma)
-
-#----------------------------------------------------------------------------
-# Preconditioning corresponding to improved DDPM (iDDPM) formulation from
-# the paper "Improved Denoising Diffusion Probabilistic Models".
-
-@persistence.persistent_class
-class iDDPMPrecond(torch.nn.Module):
-    def __init__(self,
-        img_resolution,                     # Image resolution.
-        img_channels,                       # Number of color channels.
-        label_dim       = 0,                # Number of class labels, 0 = unconditional.
-        use_fp16        = False,            # Execute the underlying model at FP16 precision?
-        C_1             = 0.001,            # Timestep adjustment at low noise levels.
-        C_2             = 0.008,            # Timestep adjustment at high noise levels.
-        M               = 1000,             # Original number of timesteps in the DDPM formulation.
-        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
-        **model_kwargs,                     # Keyword arguments for the underlying model.
-    ):
-        super().__init__()
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.label_dim = label_dim
-        self.use_fp16 = use_fp16
-        self.C_1 = C_1
-        self.C_2 = C_2
-        self.M = M
-        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels*2, label_dim=label_dim, **model_kwargs)
-
-        u = torch.zeros(M + 1)
-        for j in range(M, 0, -1): # M, ..., 1
-            u[j - 1] = ((u[j] ** 2 + 1) / (self.alpha_bar(j - 1) / self.alpha_bar(j)).clip(min=C_1) - 1).sqrt()
-        self.register_buffer('u', u)
-        self.sigma_min = float(u[M - 1])
-        self.sigma_max = float(u[0])
-
-    def forward(self, x, sigma, class_labels=None, force_fp32=False, **model_kwargs):
-        x = x.to(torch.float32)
-        sigma = sigma.to(torch.float32).reshape(-1, 1, 1, 1)
-        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
-        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
-
-        c_skip = 1
-        c_out = -sigma
-        c_in = 1 / (sigma ** 2 + 1).sqrt()
-        c_noise = self.M - 1 - self.round_sigma(sigma, return_index=True).to(torch.float32)
-
-        F_x = self.model((c_in * x).to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
-        assert F_x.dtype == dtype
-        D_x = c_skip * x + c_out * F_x[:, :self.img_channels].to(torch.float32)
-        return D_x
-
-    def alpha_bar(self, j):
-        j = torch.as_tensor(j)
-        return (0.5 * np.pi * j / self.M / (self.C_2 + 1)).sin() ** 2
-
-    def round_sigma(self, sigma, return_index=False):
-        sigma = torch.as_tensor(sigma)
-        index = torch.cdist(sigma.to(self.u.device).to(torch.float32).reshape(1, -1, 1), self.u.reshape(1, -1, 1)).argmin(2)
-        result = index if return_index else self.u[index.flatten()].to(sigma.dtype)
-        return result.reshape(sigma.shape).to(sigma.device)
 
 #----------------------------------------------------------------------------
 # Improved preconditioning proposed in the paper "Elucidating the Design
@@ -863,25 +455,23 @@ class iDDPMPrecond(torch.nn.Module):
 @persistence.persistent_class
 class EDMPrecond(torch.nn.Module):
     def __init__(self,
-        img_resolution,                     # Image resolution.
         img_channels,                       # Number of color channels.
         label_dim       = 0,                # Number of class labels, 0 = unconditional.
         use_fp16        = False,            # Execute the underlying model at FP16 precision?
         sigma_min       = 0,                # Minimum supported noise level.
         sigma_max       = float('inf'),     # Maximum supported noise level.
         sigma_data      = 0.5,              # Expected standard deviation of the training data.
-        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        model_type      = 'DualUNet',   # Class name of the underlying model.
         **model_kwargs,                     # Keyword arguments for the underlying model.
     ):
         super().__init__()
-        self.img_resolution = img_resolution
         self.img_channels = img_channels
         self.label_dim = label_dim
         self.use_fp16 = use_fp16
         self.sigma_min = sigma_min
         self.sigma_max = sigma_max
         self.sigma_data = sigma_data
-        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
+        self.model = globals()[model_type](in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
 
     def forward(self, x, sigma, class_labels=None, force_fp32=False, **model_kwargs):
         x = x.to(torch.float32)
