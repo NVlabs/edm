@@ -100,7 +100,7 @@ class SpectralConv2d(nn.Module):
         """
         2D Fourier layer. It does FFT, linear transform, and Inverse FFT.
         """
-
+        print("Initializing fourier layer...")
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.modes1 = modes1 #Number of Fourier modes to multiply, at most floor(N/2) + 1
@@ -121,6 +121,7 @@ class SpectralConv2d(nn.Module):
 
     # Downsampling by truncating fourier modes?
     def forward(self, x):
+        # TODO(dahoas): Fix hack
         print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
         batchsize, c, h, w = x.shape
         if self.down:
@@ -137,7 +138,10 @@ class SpectralConv2d(nn.Module):
         x_ft = torch.view_as_real(x_ft)
 
         # Multiply relevant Fourier modes
-        out_ft = torch.zeros((batchsize, self.out_channels,  out_h, out_w//2 + 1, 2), device=x.device)
+        out_ft = torch.zeros((batchsize, self.out_channels,  out_h, out_w//2 + 1, 2), device=x.device, dtype=x.dtype)
+        #print("x device: ", x.device, "x dtype: ", x.dtype)
+        #print("weights device: ", self.weights1.device, "weights dtype: ", self.weights1.dtype)
+        #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
         out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
@@ -380,7 +384,7 @@ class DualUNet(torch.nn.Module):
             if level == 0:
                 cin = cout
                 cout = model_channels
-                self.enc[f'{level}_conv'] = DualConv(in_channels=cin, out_channels=cout, kernel=3, modes1=modes1, modes2=modes2, **init)
+                self.enc[f'{level}_conv'] = DualConv(in_channels=cin, out_channels=cout, kernel=3, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init)
             else:
                 self.enc[f'{level}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, down=True, modes1=modes1, modes2=modes2, **block_kwargs)
             for idx in range(num_blocks):
@@ -405,7 +409,7 @@ class DualUNet(torch.nn.Module):
                 self.dec[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
             if level == 0:
                 self.dec[f'{level}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
-                self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, modes1=modes1, modes2=modes2, **init_zero)
+                self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init_zero)
 
     def forward(self, x, noise_labels, class_labels, augment_labels=None):
         # Mapping.
