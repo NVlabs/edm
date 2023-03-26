@@ -16,6 +16,7 @@ import torch
 import dnnlib
 from torch_utils import distributed as dist
 from training import training_loop
+import yaml
 
 import warnings
 warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides') # False warning printed by PyTorch 1.12.
@@ -79,6 +80,7 @@ def parse_int_list(s):
 @click.option('--transfer',      help='Transfer learning from network pickle', metavar='PKL|URL',   type=str)
 @click.option('--resume',        help='Resume from previous training state', metavar='PT',          type=str)
 @click.option('-n', '--dry-run', help='Print training options and exit',                            is_flag=True)
+@click.option('--model_config_path',  help='Model config path',                                     type=str, default="model_configs/ffhq.yml")
 
 def main(**kwargs):
     """Train diffusion-based generative model using the techniques described in the
@@ -122,6 +124,11 @@ def main(**kwargs):
         c.network_kwargs.update(num_blocks=opts.n_res_blocks)
 
     c.network_kwargs.update(mode=opts.mode)
+
+    # Load yaml model config
+    if opts.model_config_path is not None:
+        model_config = yaml.safe_load(open(opts.model_config_path, "r"))
+        c.network_kwargs.update(**model_config)
 
     # Preconditioning & loss function.
     if opts.precond == 'vp':

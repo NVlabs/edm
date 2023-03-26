@@ -347,10 +347,11 @@ class DualUNet(torch.nn.Module):
         decoder_type        = 'standard',   # Decoder architecture: 'standard' for both DDPM++ and NCSN++.
         resample_filter     = [1,1],        # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
         mode                = "dual",        # Run convs in def/fourier/dual mode
-        modes1              = 4,           # Number of fourier modes to take in first dim
-        modes2              = 3,           # Number of fourier modes to take in second dim
+        modes1_list         = 4,           # Number of fourier modes to take in first dim
+        modes2_list         = 3,           # Number of fourier modes to take in second dim
+        dual_block_thresh   = -1,
         random_fourier_feature = None,      # Random matrix B such that we map a vector v -> cos(2piBv),sin(2piBv)
-        verbose             = False,         # For print debugging
+        verbose             = True,         # For print debugging
     ):
         assert embedding_type in ['fourier', 'positional']
         assert encoder_type in ['standard', 'skip', 'residual']
@@ -385,6 +386,8 @@ class DualUNet(torch.nn.Module):
         cout = in_channels
         caux = in_channels
         for level, mult in enumerate(channel_mult):
+            modes1, modes2 = modes1_list[level], modes2_list[level]
+            block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
             if level == 0:
                 cin = cout
                 cout = model_channels
@@ -401,6 +404,9 @@ class DualUNet(torch.nn.Module):
         # Decoder.
         self.dec = torch.nn.ModuleDict()
         for level, mult in reversed(list(enumerate(channel_mult))):
+            modes1, modes2 = modes1_list[level], modes2_list[level]
+            #TODO(dahoas): Actually fourier layers end one level lower on encder vs. decoder because of upsampling
+            block_kwargs["use_spectral"] = level <= dual_block_thresh-1 if mode=="dual" else block_kwargs["use_spectral"]
             if level == len(channel_mult) - 1:
                 self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, modes1=modes1, modes2=modes2, **block_kwargs)
                 self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, modes1=modes1, modes2=modes2, **block_kwargs)
@@ -461,6 +467,7 @@ class DualUNet(torch.nn.Module):
                 if x.shape[1] != block.in_channels:
                     x = torch.cat([x, skips.pop()], dim=1)
                 x = block(x, emb)
+                print("Out shape at block {}: {}".format(name, x.shape)) if self.verbose else None
         return aux
 
 
