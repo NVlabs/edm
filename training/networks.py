@@ -122,6 +122,7 @@ class SpectralConv2d(nn.Module):
     def forward(self, x):
         # TODO(dahoas): Fix hack
         print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
+        w1 = self.weights1.to(x.dtype)
         batchsize, c, h, w = x.shape
         if self.down:
             out_h = h // 2
@@ -142,8 +143,8 @@ class SpectralConv2d(nn.Module):
         #print("weights device: ", self.weights1.device, "weights dtype: ", self.weights1.dtype)
         #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
-        out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
-        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights1)
+        out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
+        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w1)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
