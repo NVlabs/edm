@@ -48,6 +48,7 @@ def parse_int_list(s):
 @click.option('--precond',       help='Preconditioning & loss function', metavar='vp|ve|edm',       type=click.Choice(['vp', 've', 'edm']), default='edm', show_default=True)
 @click.option('--n_res_blocks',  help='Num res blocks per level', metavar='INT',                    type=int)
 @click.option('--mode',          help='Spatial/spectral modes to use', metavar='def|fourier|dual',  type=click.Choice(['def', 'fourier', 'dual']), default='def', show_default=True)
+@click.option('--random_fourier',help='Pass data through a random fourier projection',type=bool, default=False)
 
 # Hyperparameters.
 @click.option('--duration',      help='Training duration', metavar='MIMG',                          type=click.FloatRange(min=0, min_open=True), default=200, show_default=True)
@@ -159,6 +160,12 @@ def main(**kwargs):
         seed = torch.randint(1 << 31, size=[], device=torch.device('cuda'))
         torch.distributed.broadcast(seed, src=0)
         c.seed = int(seed)
+
+    # Random Fourier Projection
+    if opts.random_fourier == True:
+        B = torch.randn((32,32))  # TODO: Dont hardcode this
+        c.network_kwargs.update(random_fourier_feature=opts.random_fourier)
+
 
     # Transfer learning and resume.
     if opts.transfer is not None:

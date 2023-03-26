@@ -112,7 +112,6 @@ class SpectralConv2d(nn.Module):
 
         self.scale = (1 / (in_channels * out_channels))
         self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
-        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
         
     # Complex multiplication
     def compl_mul2d(self, input, weights):
@@ -144,7 +143,7 @@ class SpectralConv2d(nn.Module):
         #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], self.weights1)
-        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights2)
+        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], self.weights1)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
@@ -349,6 +348,7 @@ class DualUNet(torch.nn.Module):
         mode                = "dual",        # Run convs in def/fourier/dual mode
         modes1              = 4,           # Number of fourier modes to take in first dim
         modes2              = 3,           # Number of fourier modes to take in second dim
+        random_fourier_feature = None,      # Random matrix B such that we map a vector v -> cos(2piBv),sin(2piBv)
         verbose             = False,         # For print debugging
     ):
         assert embedding_type in ['fourier', 'positional']
@@ -375,6 +375,9 @@ class DualUNet(torch.nn.Module):
         self.map_augment = Linear(in_features=augment_dim, out_features=noise_channels, bias=False, **init) if augment_dim else None
         self.map_layer0 = Linear(in_features=noise_channels, out_features=emb_channels, **init)
         self.map_layer1 = Linear(in_features=emb_channels, out_features=emb_channels, **init)
+
+
+        self.random_projection_matrix = random_fourier_feature
 
         # Encoder.
         self.enc = torch.nn.ModuleDict()
@@ -411,7 +414,17 @@ class DualUNet(torch.nn.Module):
                 self.dec[f'{level}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
                 self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init_zero)
 
+    def fourier_projection(self, v):
+        B = self.random_projection_matrix
+        if B == None:
+            return v
+        else:
+            pi = torch.pi
+            return torch.cat((torch.cos(2*pi*v)@B,torch.sin(2*pi*v)@B))
+
     def forward(self, x, noise_labels, class_labels, augment_labels=None):
+        x = self.fourier_projection(x)
+
         # Mapping.
         print("Input shape: {}".format(x.shape)) if self.verbose else None
         emb = self.map_noise(noise_labels)

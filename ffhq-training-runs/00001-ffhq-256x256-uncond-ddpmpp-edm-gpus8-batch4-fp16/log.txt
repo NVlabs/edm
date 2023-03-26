@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 233, in <module>
+    main()
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 228, in main
+    training_loop.training_loop(**c)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/training/training_loop.py", line 63, in training_loop
+    num_accumulation_rounds = batch_gpu_total // batch_gpu
+ZeroDivisionError: integer division or modulo by zero
