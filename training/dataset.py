@@ -248,3 +248,86 @@ class ImageFolderDataset(Dataset):
         return labels
 
 #----------------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------------
+# Dataset subclass that loads images recursively from the specified directory
+# or ZIP file.
+
+class MultiresImageFolderDataset(Dataset):
+    def __init__(self,
+        paths,                   # Path to directory or zip.
+        resolution      = None, # Ensure specific resolution, None = highest available.
+        use_pyspng      = True, # Use pyspng if available?
+        **super_kwargs,         # Additional arguments for the Dataset base class.
+    ):
+        self._paths = paths
+        self._use_pyspng = use_pyspng
+        self._zipfiles = None
+
+        self._type = 'zip'
+        self._all_fnames_list = [set(files.namelist()) for files in self._get_zipfiles()]
+
+        PIL.Image.init()
+        self._image_fnames_list = [sorted(fname for fname in _all_fnames if self._file_ext(fname) in PIL.Image.EXTENSION) for _all_fnames in self._all_fnames_list]
+        if len(self._image_fnames) == 0:
+            raise IOError('No image files found in the specified path')
+
+        names = [os.path.splitext(os.path.basename(_path))[0] for _path in self._paths]
+        raw_shape = [len(self._image_fnames)] + list(self._load_raw_image(0).shape)
+        super().__init__(name=name, raw_shape=raw_shape, **super_kwargs)
+
+    @staticmethod
+    def _file_ext(fname):
+        return os.path.splitext(fname)[1].lower()
+
+    def _get_zipfiles(self):
+        assert self._type == 'zip'
+        if self._zipfiles is None:
+            self._zipfiles = []
+            for path in self._paths:
+                self._zipfiles.append(zipfile.ZipFile(path))
+        return self._zipfiles
+
+    def _open_file(self, fname):
+        if self._type == 'dir':
+            return open(os.path.join(self._path, fname), 'rb')
+        if self._type == 'zip':
+            return self._get_zipfile().open(fname, 'r')
+        return None
+
+    def close(self):
+        try:
+            if self._zipfile is not None:
+                self._zipfile.close()
+        finally:
+            self._zipfile = None
+
+    def __getstate__(self):
+        return dict(super().__getstate__(), _zipfile=None)
+
+    def _load_raw_image(self, raw_idx):
+        fname = self._image_fnames[raw_idx]
+        with self._open_file(fname) as f:
+            if self._use_pyspng and pyspng is not None and self._file_ext(fname) == '.png':
+                image = pyspng.load(f.read())
+            else:
+                image = np.array(PIL.Image.open(f))
+        if image.ndim == 2:
+            image = image[:, :, np.newaxis] # HW => HWC
+        image = image.transpose(2, 0, 1) # HWC => CHW
+        return image
+
+    def _load_raw_labels(self):
+        fname = 'dataset.json'
+        if fname not in self._all_fnames:
+            return None
+        with self._open_file(fname) as f:
+            labels = json.load(f)['labels']
+        if labels is None:
+            return None
+        labels = dict(labels)
+        labels = [labels[fname.replace('\\', '/')] for fname in self._image_fnames]
+        labels = np.array(labels)
+        labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
+        return labels

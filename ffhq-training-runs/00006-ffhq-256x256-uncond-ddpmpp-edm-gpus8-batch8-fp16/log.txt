@@ -1,0 +1,241 @@
+Loading dataset...
+Constructing network...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+/mnt/nvme/home/alex/repos/diffusion/edm/training/networks.py:166: UserWarning: ComplexHalf support is experimental and many operators don't support it yet. (Triggered internally at ../aten/src/ATen/EmptyTensor.cpp:31.)
+  x_ft = torch.fft.rfft2(x)
+
+EDMPrecond            Parameters  Buffers  Output shape        Datatype
+---                   ---         ---      ---                 ---     
+model.map_noise       -           -        [1, 128]            float32 
+model.map_layer0      66048       -        [1, 512]            float32 
+model.map_layer1      262656      -        [1, 512]            float32 
+model.enc.0_conv      421376      -        [1, 128, 256, 256]  float16 
+model.enc.0_block0    36012928    -        [1, 128, 256, 256]  float16 
+model.enc.0_block1    36012928    -        [1, 128, 256, 256]  float16 
+model.enc.0_block2    36012928    -        [1, 128, 256, 256]  float16 
+model.enc.0_block3    36012928    -        [1, 128, 256, 256]  float16 
+model.enc.1_down      36029440    8        [1, 128, 128, 128]  float16 
+model.enc.1_block0    108005120   -        [1, 256, 128, 128]  float16 
+model.enc.1_block1    143918848   -        [1, 256, 128, 128]  float16 
+model.enc.1_block2    143918848   -        [1, 256, 128, 128]  float16 
+model.enc.1_block3    143918848   -        [1, 256, 128, 128]  float16 
+model.enc.2_down      143984640   8        [1, 256, 64, 64]    float16 
+model.enc.2_block0    143918848   -        [1, 256, 64, 64]    float16 
+model.enc.2_block1    143918848   -        [1, 256, 64, 64]    float16 
+model.enc.2_block2    143918848   -        [1, 256, 64, 64]    float16 
+model.enc.2_block3    143918848   -        [1, 256, 64, 64]    float16 
+model.enc.3_down      1378304     8        [1, 256, 32, 32]    float16 
+model.enc.3_block0    1312512     -        [1, 256, 32, 32]    float16 
+model.enc.3_block1    1312512     -        [1, 256, 32, 32]    float16 
+model.enc.3_block2    1312512     -        [1, 256, 32, 32]    float16 
+model.enc.3_block3    1312512     -        [1, 256, 32, 32]    float16 
+model.enc.4_down      1378304     8        [1, 256, 16, 16]    float16 
+model.enc.4_block0    1576192     -        [1, 256, 16, 16]    float16 
+model.enc.4_block1    1576192     -        [1, 256, 16, 16]    float16 
+model.enc.4_block2    1576192     -        [1, 256, 16, 16]    float16 
+model.enc.4_block3    1576192     -        [1, 256, 16, 16]    float16 
+model.dec.4_in0       1576192     -        [1, 256, 16, 16]    float16 
+model.dec.4_in1       1312512     -        [1, 256, 16, 16]    float16 
+model.dec.4_block0    2034176     -        [1, 256, 16, 16]    float16 
+model.dec.4_block1    2034176     -        [1, 256, 16, 16]    float16 
+model.dec.4_block2    2034176     -        [1, 256, 16, 16]    float16 
+model.dec.4_block3    2034176     -        [1, 256, 16, 16]    float16 
+model.dec.4_block4    2297856     -        [1, 256, 16, 16]    float16 
+model.dec.3_up        1378304     8        [1, 256, 32, 32]    float16 
+model.dec.3_block0    2034176     -        [1, 256, 32, 32]    float16 
+model.dec.3_block1    2034176     -        [1, 256, 32, 32]    float16 
+model.dec.3_block2    2034176     -        [1, 256, 32, 32]    float16 
+model.dec.3_block3    2034176     -        [1, 256, 32, 32]    float16 
+model.dec.3_block4    2034176     -        [1, 256, 32, 32]    float16 
+model.dec.2_up        1378304     8        [1, 256, 64, 64]    float16 
+model.dec.2_block0    2034176     -        [1, 256, 64, 64]    float16 
+model.dec.2_block1    2034176     -        [1, 256, 64, 64]    float16 
+model.dec.2_block2    2034176     -        [1, 256, 64, 64]    float16 
+model.dec.2_block3    2034176     -        [1, 256, 64, 64]    float16 
+model.dec.2_block4    2034176     -        [1, 256, 64, 64]    float16 
+model.dec.1_up        143984640   8        [1, 256, 128, 128]  float16 
+model.dec.1_block0    215943680   -        [1, 256, 128, 128]  float16 
+model.dec.1_block1    215943680   -        [1, 256, 128, 128]  float16 
+model.dec.1_block2    215943680   -        [1, 256, 128, 128]  float16 
+model.dec.1_block3    215943680   -        [1, 256, 128, 128]  float16 
+model.dec.1_block4    179964160   -        [1, 256, 128, 128]  float16 
+model.dec.0_up        143984640   8        [1, 256, 256, 256]  float16 
+model.dec.0_block0    72009216    -        [1, 128, 256, 256]  float16 
+model.dec.0_block1    54019328    -        [1, 128, 256, 256]  float16 
+model.dec.0_block2    54019328    -        [1, 128, 256, 256]  float16 
+model.dec.0_block3    54019328    -        [1, 128, 256, 256]  float16 
+model.dec.0_block4    54019328    -        [1, 128, 256, 256]  float16 
+model.dec.0_aux_norm  256         -        [1, 128, 256, 256]  float16 
+model.dec.0_aux_conv  421251      -        [1, 3, 256, 256]    float16 
+model                 1152        -        [1, 3, 256, 256]    float16 
+<top-level>           -           -        [1, 3, 256, 256]    float32 
+---                   ---         ---      ---                 ---     
+Total                 3111203331  64       -                   -       
+
+Setting up optimizer...
+Training for 200000 kimg...
+
+tick 0     kimg 0.0       time 1m 44s       sec/tick 33.8    sec/kimg 4226.95 maintenance 69.8   cpumem 3.30   gpumem 70.63  reserved 71.82 
+Traceback (most recent call last):
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 247, in <module>
+    main()
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 242, in main
+    training_loop.training_loop(**c)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/training/training_loop.py", line 181, in training_loop
+    value = copy.deepcopy(value).eval().requires_grad_(False)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 264, in _reconstruct
+    y = func(*args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 263, in <genexpr>
+    args = (deepcopy(arg, memo) for arg in args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 264, in _reconstruct
+    y = func(*args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 263, in <genexpr>
+    args = (deepcopy(arg, memo) for arg in args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 264, in _reconstruct
+    y = func(*args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 263, in <genexpr>
+    args = (deepcopy(arg, memo) for arg in args)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/copy.py", line 153, in deepcopy
+    y = copier(memo)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/torch/nn/parameter.py", line 55, in __deepcopy__
+    result = type(self)(self.data.clone(memory_format=torch.preserve_format), self.requires_grad)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 544.00 MiB (GPU 0; 79.18 GiB total capacity; 76.47 GiB already allocated; 468.31 MiB free; 76.64 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

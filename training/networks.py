@@ -93,6 +93,35 @@ class Conv2d(torch.nn.Module):
 
 #--------------------------------------------------------------
 # fourier layer
+
+import tensorly as tl
+from tensorly.plugins import use_opt_einsum
+tl.set_backend('pytorch')
+
+use_opt_einsum('optimal')
+
+from tltorch.factorized_tensors.core import FactorizedTensor
+
+einsum_symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+def _contract_cp(x, cp_weight, separable=False):
+    order = tl.ndim(x)
+
+    x_syms = str(einsum_symbols[:order])
+    rank_sym = einsum_symbols[order]
+    out_sym = einsum_symbols[order+1]
+    out_syms = list(x_syms)
+    if separable:
+        factor_syms = [einsum_symbols[1]+rank_sym] #in only
+    else:
+        out_syms[1] = out_sym
+        factor_syms = [einsum_symbols[1]+rank_sym,out_sym+rank_sym] #in, out
+    factor_syms += [xs+rank_sym for xs in x_syms[2:]] #x, y, ...
+    eq = x_syms + ',' + rank_sym + ',' + ','.join(factor_syms) + '->' + ''.join(out_syms)
+
+    return tl.einsum(eq, x, cp_weight.weights, *cp_weight.factors)
+
+
 class SpectralConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=False):
         super(SpectralConv2d, self).__init__()
@@ -347,11 +376,11 @@ class DualUNet(torch.nn.Module):
         decoder_type        = 'standard',   # Decoder architecture: 'standard' for both DDPM++ and NCSN++.
         resample_filter     = [1,1],        # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
         mode                = "dual",        # Run convs in def/fourier/dual mode
-        modes1_list         = 4,           # Number of fourier modes to take in first dim
-        modes2_list         = 3,           # Number of fourier modes to take in second dim
+        modes1_list         = None,           # Number of fourier modes to take in first dim
+        modes2_list         = None,           # Number of fourier modes to take in second dim
         dual_block_thresh   = -1,
         random_fourier_feature = None,      # Random matrix B such that we map a vector v -> cos(2piBv),sin(2piBv)
-        verbose             = True,         # For print debugging
+        verbose             = False,         # For print debugging
     ):
         assert embedding_type in ['fourier', 'positional']
         assert encoder_type in ['standard', 'skip', 'residual']
@@ -406,12 +435,17 @@ class DualUNet(torch.nn.Module):
         for level, mult in reversed(list(enumerate(channel_mult))):
             modes1, modes2 = modes1_list[level], modes2_list[level]
             #TODO(dahoas): Actually fourier layers end one level lower on encder vs. decoder because of upsampling
-            block_kwargs["use_spectral"] = level <= dual_block_thresh-1 if mode=="dual" else block_kwargs["use_spectral"]
+            # But actually this also true of the fourier layers in the encoder after down-sampling
+            block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
             if level == len(channel_mult) - 1:
                 self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, modes1=modes1, modes2=modes2, **block_kwargs)
                 self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, modes1=modes1, modes2=modes2, **block_kwargs)
             else:
-                self.dec[f'{level}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, modes1=modes1, modes2=modes2, **block_kwargs)
+                # For dual upsampling block cannot use full set of modes yet. First must upsample!
+                # This block may also only use a spatial convolution if it is at the dual_block_thresh
+                block_kwargs["use_spectral"] = level+1 <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
+                self.dec[f'{level}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, modes1=modes1_list[level+1], modes2=modes2_list[level+1], **block_kwargs)
+                block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
             for idx in range(num_blocks + 1):
                 cin = cout + skips.pop()
                 cout = model_channels * mult
