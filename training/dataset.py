@@ -15,6 +15,8 @@ import json
 import torch
 import dnnlib
 
+from torch.utils.data import DataLoader
+
 try:
     import pyspng
 except ImportError:
@@ -249,12 +251,97 @@ class ImageFolderDataset(Dataset):
 
 #----------------------------------------------------------------------------
 
-
 #----------------------------------------------------------------------------
 # Dataset subclass that loads images recursively from the specified directory
 # or ZIP file.
 
-class MultiresImageFolderDataset(Dataset):
+
+class MultiresDataset(torch.utils.data.Dataset):
+    def __init__(self,
+        names,                   # Name of the dataset.
+        raw_shapes,              # Shape of the raw image data (NCHW).
+        bs,
+        random_seed = 0,        # Random seed to use when applying max_size.
+        cache       = False,    # Cache images in CPU memory?
+    ):
+        self._names = names
+        self._raw_shapes = raw_shapes
+        self._cache = cache
+        self._cached_images = dict() # {raw_idx: np.ndarray, ...}
+        self._num_dists = len(names)
+        self._bs = bs
+
+        # Apply max_size.
+        self._raw_idxs = [np.arange(shape, dtype=np.int64) for shape in self._raw_shapes]
+        self.mode = 0
+        self.batch_cnt = 0
+
+    def close(self): # to be overridden by subclass
+        pass
+
+    def _load_raw_image(self, raw_idx): # to be overridden by subclass
+        raise NotImplementedError
+
+    def _load_raw_labels(self): # to be overridden by subclass
+        raise NotImplementedError
+
+    def __getstate__(self):
+        return dict(self.__dict__, _raw_labels=None)
+
+    def __del__(self):
+        try:
+            self.close()
+        except:
+            pass
+
+    def __len__(self):
+        return sum(raw_idx.size for rad_idx in self._raw_idxs)
+
+    def __getitem__(self, idx):
+        raw_idx = self._raw_idx[idx]
+        image = self._cached_images.get(raw_idx, None)
+        if image is None:
+            image = self._load_raw_image(raw_idx)
+            if self._cache:
+                self._cached_images[raw_idx] = image
+        assert isinstance(image, np.ndarray)
+        assert list(image.shape) == self.image_shape
+        assert image.dtype == np.uint8
+        if self._xflip[idx]:
+            assert image.ndim == 3 # CHW
+            image = image[:, :, ::-1]
+        self.mode = (self.mode + 1) % self._num_dists
+        return image.copy(), self.get_label(idx)
+
+    def get_details(self, idx):
+        d = dnnlib.EasyDict()
+        d.raw_idx = int(self._raw_idx[idx])
+        d.xflip = (int(self._xflip[idx]) != 0)
+        d.raw_label = self._get_raw_labels()[d.raw_idx].copy()
+        return d
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def image_shape(self):
+        return list(self._raw_shape[1:])
+
+    @property
+    def num_channels(self):
+        assert len(self.image_shape) == 3 # CHW
+        return self.image_shape[0]
+
+    @property
+    def resolution(self):
+        raise ValueError("Dataset contains multiple resolutions")
+
+
+
+
+
+class MultiresImageFolderDataset(MultiresDataset):
     def __init__(self,
         paths,                   # Path to directory or zip.
         resolution      = None, # Ensure specific resolution, None = highest available.
@@ -317,17 +404,3 @@ class MultiresImageFolderDataset(Dataset):
             image = image[:, :, np.newaxis] # HW => HWC
         image = image.transpose(2, 0, 1) # HWC => CHW
         return image
-
-    def _load_raw_labels(self):
-        fname = 'dataset.json'
-        if fname not in self._all_fnames:
-            return None
-        with self._open_file(fname) as f:
-            labels = json.load(f)['labels']
-        if labels is None:
-            return None
-        labels = dict(labels)
-        labels = [labels[fname.replace('\\', '/')] for fname in self._image_fnames]
-        labels = np.array(labels)
-        labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
-        return labels

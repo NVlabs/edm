@@ -19,12 +19,13 @@ import dnnlib
 from torch_utils import distributed as dist
 from torch_utils import training_stats
 from torch_utils import misc
+import functools
 
 #----------------------------------------------------------------------------
 
 def training_loop(
     run_dir             = '.',      # Output directory.
-    dataset_kwargs      = {},       # Options for training set.
+    datasets_kwargs     = {},       # Options for training set.
     data_loader_kwargs  = {},       # Options for torch.utils.data.DataLoader.
     network_kwargs      = {},       # Options for model and preconditioning.
     loss_kwargs         = {},       # Options for loss function.
@@ -64,10 +65,18 @@ def training_loop(
     assert batch_size == batch_gpu * num_accumulation_rounds * dist.get_world_size()
 
     # Load dataset.
-    dist.print0('Loading dataset...')
-    dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # subclass of training.dataset.Dataset
-    dataset_sampler = misc.InfiniteSampler(dataset=dataset_obj, rank=dist.get_rank(), num_replicas=dist.get_world_size(), seed=seed)
-    dataset_iterator = iter(torch.utils.data.DataLoader(dataset=dataset_obj, sampler=dataset_sampler, batch_size=batch_gpu, **data_loader_kwargs))
+    dist.print0('Loading datasets...')
+
+    #TODO(dahoas): Figure out more principled way of doing multi-res training
+    datasets_objs = []
+    for dataset_kwargs in datasets_kwargs:
+        dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # subclass of training.dataset.Dataset
+        datasets_objs.append(dataset_obj)
+    assert functools.reduce(lambda x, y: x and y, [len(datasets_objs[0]) == len(d) for d in datasets_objs])
+    datasets_samplers = [misc.InfiniteSampler(dataset=dataset_obj, rank=dist.get_rank(), num_replicas=dist.get_world_size(), seed=seed) for dataset_obj in datasets_objs]
+    datasets_iterators = [iter(torch.utils.data.DataLoader(dataset=dataset_obj, sampler=dataset_sampler, batch_size=batch_gpu, **data_loader_kwargs)) for dataset_sampler, dataset_obj in zip(datasets_samplers, datasets_objs)]
+    print(data_loader_kwargs)
+    exit()
 
     # Construct network.
     dist.print0('Constructing network...')

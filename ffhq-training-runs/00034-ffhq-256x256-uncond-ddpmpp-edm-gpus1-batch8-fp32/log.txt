@@ -1,0 +1,394 @@
+Loading dataset...
+Constructing network...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Input has shape: torch.Size([8, 3, 256, 256])
+Has nan: False
+Out shape at block 0_conv: torch.Size([8, 128, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_block1: torch.Size([8, 128, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_block2: torch.Size([8, 128, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_block3: torch.Size([8, 128, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 4, 5, 2])
+out_ft shape: torch.Size([8, 128, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 128, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 128, 128]) torch.Size([128, 128, 4, 5, 2])
+out_ft shape: torch.Size([8, 128, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 128, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_down: torch.Size([8, 128, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 128, 128, 128]) torch.Size([128, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_down: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_down: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_in0: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_in1: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 3_block4: torch.Size([8, 256, 32, 32])
+Has nan: False
+Spatial out nan: False, Spectral out nan: False
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_up: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 64, 64]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 64, 64]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 64, 64]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 64, 64]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 64, 64]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 64, 33, 2])
+Spectral out x shape: torch.Size([8, 256, 64, 64])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 2_block4: torch.Size([8, 256, 64, 64])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 64, 64]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_up: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 128, 128]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 128, 128]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 128, 128]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 512, 128, 128]) torch.Size([512, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 384, 128, 128]) torch.Size([384, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 128, 65, 2])
+Spectral out x shape: torch.Size([8, 256, 128, 128])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 1_block4: torch.Size([8, 256, 128, 128])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 256, 128, 128]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 256, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 256, 256, 256]) torch.Size([256, 256, 4, 5, 2])
+out_ft shape: torch.Size([8, 256, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 256, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_up: torch.Size([8, 256, 256, 256])
+Has nan: False
+Spec conv input, weights:  torch.Size([8, 384, 256, 256]) torch.Size([384, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Spec conv input, weights:  torch.Size([8, 128, 256, 256]) torch.Size([128, 128, 8, 9, 2])
+out_ft shape: torch.Size([8, 128, 256, 129, 2])
+Spectral out x shape: torch.Size([8, 128, 256, 256])
+Spatial out nan: False, Spectral out nan: False
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: False
+
+Aborted!

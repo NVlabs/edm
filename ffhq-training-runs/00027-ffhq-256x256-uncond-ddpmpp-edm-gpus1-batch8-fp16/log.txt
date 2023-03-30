@@ -1,0 +1,465 @@
+Loading dataset...
+Constructing network...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Input has shape: torch.Size([8, 3, 256, 256])
+Has nan: False
+/mnt/nvme/home/alex/repos/diffusion/edm/training/networks.py:166: UserWarning: ComplexHalf support is experimental and many operators don't support it yet. (Triggered internally at ../aten/src/ATen/EmptyTensor.cpp:31.)
+  x_ft = torch.fft.rfft2(x)
+Out shape at block 0_conv: torch.Size([8, 128, 256, 256])
+Has nan: False
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block1: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block2: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block3: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 1_down: torch.Size([8, 128, 128, 128])
+Has nan: True
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 2_down: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 3_down: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_in0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_in1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block4: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 2_up: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block4: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 1_up: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block4: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 0_up: torch.Size([8, 256, 256, 256])
+Has nan: True
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block1: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block2: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block3: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block4: torch.Size([8, 128, 256, 256])
+Has nan: True
+
+EDMPrecond            Parameters  Buffers  Output shape        Datatype
+---                   ---         ---      ---                 ---     
+model.map_noise       -           -        [8, 128]            float32 
+model.map_layer0      66048       -        [8, 512]            float32 
+model.map_layer1      262656      -        [8, 512]            float32 
+model.enc.0_conv      212480      -        [8, 128, 256, 256]  float16 
+model.enc.0_block0    18187136    -        [8, 128, 256, 256]  float16 
+model.enc.0_block1    18187136    -        [8, 128, 256, 256]  float16 
+model.enc.0_block2    18187136    -        [8, 128, 256, 256]  float16 
+model.enc.0_block3    18187136    -        [8, 128, 256, 256]  float16 
+model.enc.1_down      5096448     8        [8, 128, 128, 128]  float16 
+model.enc.1_block0    15206144    -        [8, 256, 128, 128]  float16 
+model.enc.1_block1    20186880    -        [8, 256, 128, 128]  float16 
+model.enc.1_block2    20186880    -        [8, 256, 128, 128]  float16 
+model.enc.1_block3    20186880    -        [8, 256, 128, 128]  float16 
+model.enc.2_down      6621184     8        [8, 256, 64, 64]    float16 
+model.enc.2_block0    6819072     -        [8, 256, 64, 64]    float16 
+model.enc.2_block1    6819072     -        [8, 256, 64, 64]    float16 
+model.enc.2_block2    6819072     -        [8, 256, 64, 64]    float16 
+model.enc.2_block3    6819072     -        [8, 256, 64, 64]    float16 
+model.enc.3_down      1378304     8        [8, 256, 32, 32]    float16 
+model.enc.3_block0    1312512     -        [8, 256, 32, 32]    float16 
+model.enc.3_block1    1312512     -        [8, 256, 32, 32]    float16 
+model.enc.3_block2    1312512     -        [8, 256, 32, 32]    float16 
+model.enc.3_block3    1312512     -        [8, 256, 32, 32]    float16 
+model.dec.3_in0       1576192     -        [8, 256, 32, 32]    float16 
+model.dec.3_in1       1312512     -        [8, 256, 32, 32]    float16 
+model.dec.3_block0    2034176     -        [8, 256, 32, 32]    float16 
+model.dec.3_block1    2034176     -        [8, 256, 32, 32]    float16 
+model.dec.3_block2    2034176     -        [8, 256, 32, 32]    float16 
+model.dec.3_block3    2034176     -        [8, 256, 32, 32]    float16 
+model.dec.3_block4    2034176     -        [8, 256, 32, 32]    float16 
+model.dec.2_up        1378304     8        [8, 256, 64, 64]    float16 
+model.dec.2_block0    9898496     -        [8, 256, 64, 64]    float16 
+model.dec.2_block1    9898496     -        [8, 256, 64, 64]    float16 
+model.dec.2_block2    9898496     -        [8, 256, 64, 64]    float16 
+model.dec.2_block3    9898496     -        [8, 256, 64, 64]    float16 
+model.dec.2_block4    10162176    -        [8, 256, 64, 64]    float16 
+model.dec.1_up        6621184     8        [8, 256, 128, 128]  float16 
+model.dec.1_block0    30345728    -        [8, 256, 128, 128]  float16 
+model.dec.1_block1    30345728    -        [8, 256, 128, 128]  float16 
+model.dec.1_block2    30345728    -        [8, 256, 128, 128]  float16 
+model.dec.1_block3    30345728    -        [8, 256, 128, 128]  float16 
+model.dec.1_block4    25299200    -        [8, 256, 128, 128]  float16 
+model.dec.0_up        20252672    8        [8, 256, 256, 256]  float16 
+model.dec.0_block0    36357632    -        [8, 128, 256, 256]  float16 
+model.dec.0_block1    27280640    -        [8, 128, 256, 256]  float16 
+model.dec.0_block2    27280640    -        [8, 128, 256, 256]  float16 
+model.dec.0_block3    27280640    -        [8, 128, 256, 256]  float16 
+model.dec.0_block4    27280640    -        [8, 128, 256, 256]  float16 
+model.dec.0_aux_norm  256         -        [8, 128, 256, 256]  float16 
+model.dec.0_aux_conv  212355      -        [8, 3, 256, 256]    float16 
+model                 1152        -        [8, 3, 256, 256]    float16 
+<top-level>           -           -        [8, 3, 256, 256]    float32 
+---                   ---         ---      ---                 ---     
+Total                 578122755   48       -                   -       
+
+Setting up optimizer...
+Training for 200000 kimg...
+
+Input has shape: torch.Size([8, 3, 256, 256])
+Has nan: False
+Out shape at block 0_conv: torch.Size([8, 128, 256, 256])
+Has nan: False
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block1: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block2: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block3: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 1_down: torch.Size([8, 128, 128, 128])
+Has nan: True
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 2_down: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 3_down: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_in0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_in1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block0: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block1: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block2: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block3: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 3_block4: torch.Size([8, 256, 32, 32])
+Has nan: True
+Out shape at block 2_up: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block0: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block1: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block2: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block3: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 2_block4: torch.Size([8, 256, 64, 64])
+Has nan: True
+Out shape at block 1_up: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block0: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block1: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block2: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block3: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 1_block4: torch.Size([8, 256, 128, 128])
+Has nan: True
+Out shape at block 0_up: torch.Size([8, 256, 256, 256])
+Has nan: True
+Out shape at block 0_block0: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block1: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block2: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block3: torch.Size([8, 128, 256, 256])
+Has nan: True
+Out shape at block 0_block4: torch.Size([8, 128, 256, 256])
+Has nan: True
+tensor([[[[ 0.0398, -0.0288,  0.0967,  ...,  0.0905,  0.0371,  0.0552],
+          [ 0.0637, -0.0347, -0.0271,  ..., -0.0193, -0.0246,  0.0239],
+          [ 0.0333, -0.0563,  0.0365,  ...,  0.1089,  0.0434,  0.1292],
+          ...,
+          [-0.0059,  0.0530,  0.0506,  ..., -0.0527,  0.0205,  0.0825],
+          [ 0.1383, -0.0036,  0.0247,  ...,  0.0434, -0.0134,  0.0890],
+          [ 0.0772,  0.1310, -0.0123,  ...,  0.0459,  0.0417, -0.0334]],
+
+         [[ 0.0161, -0.0885,  0.0995,  ...,  0.0605,  0.0380,  0.0226],
+          [ 0.0747,  0.0393,  0.0268,  ...,  0.1109, -0.0333, -0.0285],
+          [-0.0204,  0.0745, -0.0153,  ...,  0.0350,  0.0332, -0.0256],
+          ...,
+          [ 0.0250, -0.0340,  0.0563,  ...,  0.0669, -0.0420, -0.0299],
+          [ 0.0216,  0.0793, -0.0455,  ...,  0.0502,  0.0385, -0.0528],
+          [ 0.1065,  0.0624,  0.0288,  ..., -0.0027,  0.0718,  0.0420]],
+
+         [[ 0.0017,  0.0418, -0.0304,  ...,  0.0017,  0.0498,  0.0059],
+          [ 0.0804,  0.1573,  0.0597,  ...,  0.0114,  0.0969,  0.0078],
+          [ 0.1188,  0.1601, -0.0212,  ...,  0.0107,  0.0382, -0.0156],
+          ...,
+          [ 0.0659, -0.0015,  0.0179,  ..., -0.0521,  0.0502, -0.0127],
+          [ 0.0452,  0.1000,  0.0906,  ..., -0.0458, -0.0051,  0.0763],
+          [ 0.0399,  0.1006,  0.0424,  ...,  0.0392,  0.0015,  0.1192]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        ...,
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[-0.0522, -0.0153, -0.2187,  ..., -0.3584, -0.1970,  0.1078],
+          [ 0.0224,  0.0041, -0.1982,  ..., -0.0688, -0.0185,  0.0816],
+          [ 0.2320, -0.0855,  0.1067,  ..., -0.2360,  0.1770,  0.0952],
+          ...,
+          [-0.1061,  0.0919, -0.1901,  ...,  0.0698,  0.2765,  0.0403],
+          [ 0.0177,  0.0385,  0.0210,  ...,  0.2387,  0.2378,  0.0320],
+          [-0.1169,  0.2182,  0.0278,  ...,  0.1245,  0.1445,  0.1662]],
+
+         [[-0.0721, -0.1168, -0.1932,  ..., -0.1518, -0.0724, -0.1029],
+          [-0.2802,  0.1107, -0.0977,  ...,  0.0082, -0.0403, -0.1438],
+          [-0.2789, -0.1777, -0.0010,  ..., -0.1946, -0.0409, -0.0828],
+          ...,
+          [ 0.0029, -0.0130, -0.1007,  ...,  0.1356,  0.1719, -0.0569],
+          [ 0.1079,  0.2765, -0.0862,  ...,  0.2328,  0.0483,  0.1880],
+          [-0.2188,  0.0333,  0.0114,  ..., -0.1108,  0.0600,  0.2093]],
+
+         [[ 0.0977, -0.0549,  0.2606,  ..., -0.1695,  0.0807,  0.2626],
+          [ 0.0156, -0.2455,  0.0557,  ..., -0.0940, -0.0234,  0.0062],
+          [ 0.1369,  0.1331, -0.1957,  ...,  0.0883, -0.1081,  0.1159],
+          ...,
+          [ 0.0415,  0.0438,  0.0563,  ...,  0.0607,  0.1405,  0.1890],
+          [ 0.0510, -0.1142,  0.1885,  ...,  0.0577,  0.2152,  0.2071],
+          [ 0.0197,  0.0073, -0.2615,  ...,  0.1599,  0.1645,  0.1084]]]],
+       device='cuda:0', grad_fn=<AddBackward0>)

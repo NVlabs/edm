@@ -1,0 +1,281 @@
+Loading dataset...
+Constructing network...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+/mnt/nvme/home/alex/repos/diffusion/edm/training/networks.py:166: UserWarning: ComplexHalf support is experimental and many operators don't support it yet. (Triggered internally at ../aten/src/ATen/EmptyTensor.cpp:31.)
+  x_ft = torch.fft.rfft2(x)
+
+EDMPrecond            Parameters  Buffers  Output shape         Datatype
+---                   ---         ---      ---                  ---     
+model.map_noise       -           -        [16, 128]            float32 
+model.map_layer0      66048       -        [16, 512]            float32 
+model.map_layer1      262656      -        [16, 512]            float32 
+model.enc.0_conv      212480      -        [16, 128, 256, 256]  float16 
+model.enc.0_block0    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block1    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block2    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block3    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.1_down      5096448     8        [16, 128, 128, 128]  float16 
+model.enc.1_block0    15206144    -        [16, 256, 128, 128]  float16 
+model.enc.1_block1    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.1_block2    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.1_block3    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.2_down      6621184     8        [16, 256, 64, 64]    float16 
+model.enc.2_block0    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block1    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block2    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block3    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.3_down      1378304     8        [16, 256, 32, 32]    float16 
+model.enc.3_block0    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block1    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block2    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block3    1312512     -        [16, 256, 32, 32]    float16 
+model.dec.3_in0       1576192     -        [16, 256, 32, 32]    float16 
+model.dec.3_in1       1312512     -        [16, 256, 32, 32]    float16 
+model.dec.3_block0    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block1    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block2    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block3    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block4    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.2_up        1378304     8        [16, 256, 64, 64]    float16 
+model.dec.2_block0    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block1    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block2    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block3    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block4    10162176    -        [16, 256, 64, 64]    float16 
+model.dec.1_up        6621184     8        [16, 256, 128, 128]  float16 
+model.dec.1_block0    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block1    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block2    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block3    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block4    25299200    -        [16, 256, 128, 128]  float16 
+model.dec.0_up        20252672    8        [16, 256, 256, 256]  float16 
+model.dec.0_block0    36357632    -        [16, 128, 256, 256]  float16 
+model.dec.0_block1    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block2    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block3    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block4    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_aux_norm  256         -        [16, 128, 256, 256]  float16 
+model.dec.0_aux_conv  212355      -        [16, 3, 256, 256]    float16 
+model                 1152        -        [16, 3, 256, 256]    float16 
+<top-level>           -           -        [16, 3, 256, 256]    float32 
+---                   ---         ---      ---                  ---     
+Total                 578122755   48       -                    -       
+
+Setting up optimizer...
+Training for 200000 kimg...
+
+tensor([[[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        ...,
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]],
+
+         [[    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          ...,
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan],
+          [    nan,     nan,     nan,  ...,     nan,     nan,     nan]]],
+
+
+        [[[ 0.2235,  0.0308,  0.0530,  ...,  0.3228,  0.0359,  0.0838],
+          [ 0.1188, -0.1654,  0.1699,  ..., -0.0320,  0.2015, -0.1226],
+          [-0.0906,  0.1045,  0.0595,  ...,  0.1178,  0.2114,  0.0242],
+          ...,
+          [ 0.1089, -0.2669, -0.0933,  ..., -0.1185,  0.0902,  0.2603],
+          [-0.0421,  0.0486,  0.1508,  ...,  0.0263, -0.0514, -0.0146],
+          [ 0.0255, -0.0839, -0.3209,  ..., -0.1178,  0.0606,  0.0179]],
+
+         [[ 0.0885,  0.0137, -0.0485,  ...,  0.0734, -0.0728, -0.1019],
+          [ 0.0327, -0.0300,  0.0853,  ..., -0.0926,  0.1977,  0.0050],
+          [ 0.0138,  0.3172,  0.0679,  ...,  0.1112,  0.1887,  0.0442],
+          ...,
+          [-0.0199, -0.1603, -0.1284,  ..., -0.1081,  0.3010, -0.1650],
+          [ 0.0348,  0.0933,  0.2014,  ...,  0.0218, -0.1614,  0.0568],
+          [-0.0307,  0.0577,  0.0448,  ..., -0.0619, -0.0706,  0.0821]],
+
+         [[ 0.1069,  0.0377,  0.0567,  ..., -0.0866,  0.1638,  0.0916],
+          [-0.1031,  0.0513,  0.1505,  ...,  0.0261,  0.0682,  0.0424],
+          [ 0.1263,  0.2083, -0.0352,  ...,  0.0975,  0.0246,  0.2135],
+          ...,
+          [ 0.0218, -0.1998, -0.0422,  ...,  0.2210, -0.1158,  0.2190],
+          [-0.0346,  0.0498,  0.0156,  ...,  0.1098,  0.0096,  0.3643],
+          [ 0.0651, -0.0952,  0.0421,  ...,  0.1167, -0.0172,  0.0266]]]],
+       device='cuda:0', grad_fn=<AddBackward0>)

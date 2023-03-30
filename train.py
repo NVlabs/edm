@@ -43,7 +43,7 @@ def parse_int_list(s):
 
 # Main options.
 @click.option('--outdir',        help='Where to save the results', metavar='DIR',                   type=str, required=True)
-@click.option('--data',          help='Path to the dataset', metavar='ZIP|DIR',                     type=str, required=True)
+@click.option('--data',          help='Paths to the datasets', metavar='ZIP|DIR',                     type=list, required=True)
 @click.option('--cond',          help='Train class-conditional model', metavar='BOOL',              type=bool, default=False, show_default=True)
 @click.option('--arch',          help='Network architecture', metavar='ddpmpp|ncsnpp|adm',          type=click.Choice(['ddpmpp', 'ncsnpp', 'adm']), default='ddpmpp', show_default=True)
 @click.option('--precond',       help='Preconditioning & loss function', metavar='vp|ve|edm',       type=click.Choice(['vp', 've', 'edm']), default='edm', show_default=True)
@@ -81,6 +81,8 @@ def parse_int_list(s):
 @click.option('--resume',        help='Resume from previous training state', metavar='PT',          type=str)
 @click.option('-n', '--dry-run', help='Print training options and exit',                            is_flag=True)
 @click.option('--model_config_path',  help='Model config path',                                     type=str, default="model_configs/ffhq.yml")
+@click.option('-v', '--verbose', help='Enter debugging mode',                                       is_flag=True)
+
 
 def main(**kwargs):
     """Train diffusion-based generative model using the techniques described in the
@@ -99,7 +101,8 @@ def main(**kwargs):
 
     # Initialize config dict.
     c = dnnlib.EasyDict()
-    c.dataset_kwargs = dnnlib.EasyDict(class_name='training.dataset.ImageFolderDataset', path=opts.data, use_labels=opts.cond, xflip=opts.xflip, cache=opts.cache)
+    opts.data = [opts.data] if type(opts.data) == str else opts.data
+    c.datasets_kwargs = [dnnlib.EasyDict(class_name='training.dataset.ImageFolderDataset', path=path, use_labels=opts.cond, xflip=opts.xflip, cache=opts.cache) for path in opts.data]
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, num_workers=opts.workers, prefetch_factor=2)
     c.network_kwargs = dnnlib.EasyDict()
     c.loss_kwargs = dnnlib.EasyDict()
@@ -124,6 +127,7 @@ def main(**kwargs):
         c.network_kwargs.update(num_blocks=opts.n_res_blocks)
 
     c.network_kwargs.update(mode=opts.mode)
+    c.network_kwargs.update(verbose=opts.verbose)
 
     # Load yaml model config
     if opts.model_config_path is not None:

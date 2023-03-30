@@ -173,6 +173,7 @@ class SpectralConv2d(nn.Module):
         #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
+        # TODO(dahoas): Sampling from the end samples higher modes for larger images
         out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w1)
 
         #Return to physical space
@@ -200,10 +201,13 @@ class DualConv(nn.Module):
         self.spatial_conv = Conv2d(in_channels, out_channels, kernel, bias, up, down, 
                                    resample_filter, fused_resample, init_mode, init_weight, init_bias) if use_spatial else None
         self.spectral_conv = SpectralConv2d(in_channels, out_channels, modes1, modes2, up, down, verbose) if use_spectral else None
+        self.verbose = verbose
 
     def forward(self, x):
         spatial_out = self.spatial_conv(x) if self.use_spatial else 0
         spectral_out = self.spectral_conv(x) if self.use_spectral else 0
+        print("Spatial out nan: {}, Spectral out nan: {}".format(torch.any(spatial_out.isnan()) if type(spatial_out) is not int else False, torch.any(spectral_out.isnan()) if type(spectral_out) is not int else False)) if self.verbose else None
+        # TODO(dahoas): Try other combination techniques
         return spatial_out + spectral_out
 
 #----------------------------------------------------------------------------
@@ -398,6 +402,7 @@ class DualUNet(torch.nn.Module):
             emb_channels=emb_channels, num_heads=1, dropout=dropout, skip_scale=np.sqrt(0.5), eps=1e-6,
             resample_filter=resample_filter, resample_proj=True, adaptive_scale=False,
             init=init, init_zero=init_zero, init_attn=init_attn, use_spatial="fourier"!=mode, use_spectral="def"!=mode,
+            verbose=verbose,
         )
 
         # Mapping.
@@ -461,13 +466,13 @@ class DualUNet(torch.nn.Module):
             return v
         else:
             pi = torch.pi
-            return torch.cat((torch.cos(2*pi*v)@B,torch.sin(2*pi*v)@B))
+            return torch.cat((torch.cos(2*pi*v@B),torch.sin(2*pi*v@B)))
 
     def forward(self, x, noise_labels, class_labels, augment_labels=None):
         x = self.fourier_projection(x)
 
         # Mapping.
-        print("Input shape: {}".format(x.shape)) if self.verbose else None
+        print("Input has shape: {}\nHas nan: {}".format(x.shape, torch.any(x.isnan()))) if self.verbose else None
         emb = self.map_noise(noise_labels)
         emb = emb.reshape(emb.shape[0], 2, -1).flip(1).reshape(*emb.shape) # swap sin/cos
         if self.map_label is not None:
@@ -485,7 +490,7 @@ class DualUNet(torch.nn.Module):
         aux = x
         for name, block in self.enc.items():
             x = block(x, emb) if isinstance(block, DualUNetBlock) else block(x)
-            print("Out shape at block {}: {}".format(name, x.shape)) if self.verbose else None
+            print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
             skips.append(x)
 
         # Decoder.
@@ -501,7 +506,7 @@ class DualUNet(torch.nn.Module):
                 if x.shape[1] != block.in_channels:
                     x = torch.cat([x, skips.pop()], dim=1)
                 x = block(x, emb)
-                print("Out shape at block {}: {}".format(name, x.shape)) if self.verbose else None
+                print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
         return aux
 
 

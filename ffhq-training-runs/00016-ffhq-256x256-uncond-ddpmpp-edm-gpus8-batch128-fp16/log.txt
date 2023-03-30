@@ -1,0 +1,656 @@
+Loading dataset...
+Constructing network...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Initializing fourier layer...
+Input shape: torch.Size([16, 3, 256, 256])
+/mnt/nvme/home/alex/repos/diffusion/edm/training/networks.py:166: UserWarning: ComplexHalf support is experimental and many operators don't support it yet. (Triggered internally at ../aten/src/ATen/EmptyTensor.cpp:31.)
+  x_ft = torch.fft.rfft2(x)
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+
+EDMPrecond            Parameters  Buffers  Output shape         Datatype
+---                   ---         ---      ---                  ---     
+model.map_noise       -           -        [16, 128]            float32 
+model.map_layer0      66048       -        [16, 512]            float32 
+model.map_layer1      262656      -        [16, 512]            float32 
+model.enc.0_conv      212480      -        [16, 128, 256, 256]  float16 
+model.enc.0_block0    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block1    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block2    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.0_block3    18187136    -        [16, 128, 256, 256]  float16 
+model.enc.1_down      5096448     8        [16, 128, 128, 128]  float16 
+model.enc.1_block0    15206144    -        [16, 256, 128, 128]  float16 
+model.enc.1_block1    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.1_block2    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.1_block3    20186880    -        [16, 256, 128, 128]  float16 
+model.enc.2_down      6621184     8        [16, 256, 64, 64]    float16 
+model.enc.2_block0    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block1    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block2    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.2_block3    6819072     -        [16, 256, 64, 64]    float16 
+model.enc.3_down      1378304     8        [16, 256, 32, 32]    float16 
+model.enc.3_block0    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block1    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block2    1312512     -        [16, 256, 32, 32]    float16 
+model.enc.3_block3    1312512     -        [16, 256, 32, 32]    float16 
+model.dec.3_in0       1576192     -        [16, 256, 32, 32]    float16 
+model.dec.3_in1       1312512     -        [16, 256, 32, 32]    float16 
+model.dec.3_block0    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block1    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block2    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block3    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.3_block4    2034176     -        [16, 256, 32, 32]    float16 
+model.dec.2_up        1378304     8        [16, 256, 64, 64]    float16 
+model.dec.2_block0    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block1    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block2    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block3    9898496     -        [16, 256, 64, 64]    float16 
+model.dec.2_block4    10162176    -        [16, 256, 64, 64]    float16 
+model.dec.1_up        6621184     8        [16, 256, 128, 128]  float16 
+model.dec.1_block0    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block1    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block2    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block3    30345728    -        [16, 256, 128, 128]  float16 
+model.dec.1_block4    25299200    -        [16, 256, 128, 128]  float16 
+model.dec.0_up        20252672    8        [16, 256, 256, 256]  float16 
+model.dec.0_block0    36357632    -        [16, 128, 256, 256]  float16 
+model.dec.0_block1    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block2    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block3    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_block4    27280640    -        [16, 128, 256, 256]  float16 
+model.dec.0_aux_norm  256         -        [16, 128, 256, 256]  float16 
+model.dec.0_aux_conv  212355      -        [16, 3, 256, 256]    float16 
+model                 1152        -        [16, 3, 256, 256]    float16 
+<top-level>           -           -        [16, 3, 256, 256]    float32 
+---                   ---         ---      ---                  ---     
+Total                 578122755   48       -                    -       
+
+Setting up optimizer...
+Training for 200000 kimg...
+
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+tick 0     kimg 0.1       time 53s          sec/tick 32.8    sec/kimg 255.90  maintenance 19.9   cpumem 3.29   gpumem 66.47  reserved 72.63 
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+tick 1     kimg 1.2       time 1m 08s       sec/tick 12.0    sec/kimg 11.72   maintenance 3.7    cpumem 3.88   gpumem 56.84  reserved 62.44 
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_in1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block0: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block1: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block2: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block3: torch.Size([16, 256, 32, 32])
+Out shape at block 3_block4: torch.Size([16, 256, 32, 32])
+Out shape at block 2_up: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block4: torch.Size([16, 256, 64, 64])
+Out shape at block 1_up: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block4: torch.Size([16, 256, 128, 128])
+Out shape at block 0_up: torch.Size([16, 256, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block4: torch.Size([16, 128, 256, 256])
+Input shape: torch.Size([16, 3, 256, 256])
+Out shape at block 0_conv: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block0: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block1: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block2: torch.Size([16, 128, 256, 256])
+Out shape at block 0_block3: torch.Size([16, 128, 256, 256])
+Out shape at block 1_down: torch.Size([16, 128, 128, 128])
+Out shape at block 1_block0: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block1: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block2: torch.Size([16, 256, 128, 128])
+Out shape at block 1_block3: torch.Size([16, 256, 128, 128])
+Out shape at block 2_down: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block0: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block1: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block2: torch.Size([16, 256, 64, 64])
+Out shape at block 2_block3: torch.Size([16, 256, 64, 64])
+Out shape at block 3_down: torch.Size([16, 256, 32, 32])
+
+Aborted!

@@ -1,0 +1,89 @@
+{
+  "dataset_kwargs": {
+    "class_name": "training.dataset.ImageFolderDataset",
+    "path": "datasets/ffhq-256x256.zip",
+    "use_labels": false,
+    "xflip": false,
+    "cache": true,
+    "resolution": 256,
+    "max_size": 70000
+  },
+  "data_loader_kwargs": {
+    "pin_memory": true,
+    "num_workers": 1,
+    "prefetch_factor": 2
+  },
+  "network_kwargs": {
+    "model_type": "DualUNet",
+    "embedding_type": "positional",
+    "encoder_type": "standard",
+    "decoder_type": "standard",
+    "channel_mult_noise": 1,
+    "resample_filter": [
+      1,
+      1
+    ],
+    "model_channels": 128,
+    "channel_mult": [
+      1,
+      2,
+      2,
+      2
+    ],
+    "mode": "dual",
+    "num_blocks": 4,
+    "attn_levels": [
+      2
+    ],
+    "modes1_list": [
+      16,
+      8,
+      4,
+      null
+    ],
+    "modes2_list": [
+      17,
+      9,
+      5,
+      null
+    ],
+    "dual_block_thresh": 2,
+    "class_name": "training.networks.EDMPrecond",
+    "augment_dim": 9,
+    "dropout": 0.13,
+    "use_fp16": true
+  },
+  "loss_kwargs": {
+    "class_name": "training.loss.EDMLoss"
+  },
+  "optimizer_kwargs": {
+    "class_name": "torch.optim.Adam",
+    "lr": 1e-05,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08
+  },
+  "augment_kwargs": {
+    "class_name": "training.augment.AugmentPipe",
+    "p": 0.12,
+    "xflip": 100000000.0,
+    "yflip": 1,
+    "scale": 1,
+    "rotate_frac": 1,
+    "aniso": 1,
+    "translate_frac": 1
+  },
+  "total_kimg": 200000,
+  "ema_halflife_kimg": 500,
+  "batch_size": 8,
+  "batch_gpu": null,
+  "loss_scaling": 1.0,
+  "cudnn_benchmark": true,
+  "kimg_per_tick": 1,
+  "snapshot_ticks": 50000,
+  "state_dump_ticks": 500,
+  "seed": 1915857390,
+  "run_dir": "ffhq-training-runs/00022-ffhq-256x256-uncond-ddpmpp-edm-gpus8-batch8-fp16"
+}
