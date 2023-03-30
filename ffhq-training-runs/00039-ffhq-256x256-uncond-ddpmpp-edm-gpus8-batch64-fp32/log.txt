@@ -188,3 +188,14 @@ tick 101   kimg 2527.5    time 13h 53m 26s  sec/tick 495.1   sec/kimg 19.78   ma
 tick 102   kimg 2552.5    time 14h 01m 41s  sec/tick 495.4   sec/kimg 19.80   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
 tick 103   kimg 2577.5    time 14h 09m 56s  sec/tick 494.9   sec/kimg 19.78   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
 tick 104   kimg 2602.6    time 14h 18m 12s  sec/tick 495.4   sec/kimg 19.80   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 105   kimg 2627.6    time 14h 26m 27s  sec/tick 495.2   sec/kimg 19.79   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 106   kimg 2652.6    time 14h 34m 42s  sec/tick 495.1   sec/kimg 19.78   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 107   kimg 2677.6    time 14h 42m 57s  sec/tick 495.3   sec/kimg 19.79   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 108   kimg 2702.7    time 14h 51m 12s  sec/tick 495.0   sec/kimg 19.78   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 109   kimg 2727.7    time 14h 59m 27s  sec/tick 495.2   sec/kimg 19.79   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 110   kimg 2752.7    time 15h 07m 42s  sec/tick 495.0   sec/kimg 19.78   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 111   kimg 2777.7    time 15h 15m 58s  sec/tick 495.2   sec/kimg 19.79   maintenance 0.7    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 112   kimg 2802.8    time 15h 24m 13s  sec/tick 494.8   sec/kimg 19.77   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 113   kimg 2827.8    time 15h 32m 28s  sec/tick 495.3   sec/kimg 19.79   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 114   kimg 2852.8    time 15h 40m 43s  sec/tick 494.9   sec/kimg 19.78   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 
+tick 115   kimg 2877.8    time 15h 48m 58s  sec/tick 494.8   sec/kimg 19.77   maintenance 0.0    cpumem 4.05   gpumem 39.93  reserved 54.27 

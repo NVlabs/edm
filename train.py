@@ -43,7 +43,7 @@ def parse_int_list(s):
 
 # Main options.
 @click.option('--outdir',        help='Where to save the results', metavar='DIR',                   type=str, required=True)
-@click.option('--data',          help='Paths to the datasets', metavar='ZIP|DIR',                     type=list, required=True)
+@click.option('-d', '--data',          help='Paths to the datasets',                                      type=str, multiple=True, required=True)
 @click.option('--cond',          help='Train class-conditional model', metavar='BOOL',              type=bool, default=False, show_default=True)
 @click.option('--arch',          help='Network architecture', metavar='ddpmpp|ncsnpp|adm',          type=click.Choice(['ddpmpp', 'ncsnpp', 'adm']), default='ddpmpp', show_default=True)
 @click.option('--precond',       help='Preconditioning & loss function', metavar='vp|ve|edm',       type=click.Choice(['vp', 've', 'edm']), default='edm', show_default=True)
@@ -107,18 +107,6 @@ def main(**kwargs):
     c.network_kwargs = dnnlib.EasyDict()
     c.loss_kwargs = dnnlib.EasyDict()
     c.optimizer_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=opts.lr, betas=[0.9,0.999], eps=1e-8)
-
-    # Validate dataset options.
-    try:
-        dataset_obj = dnnlib.util.construct_class_by_name(**c.dataset_kwargs)
-        dataset_name = dataset_obj.name
-        c.dataset_kwargs.resolution = dataset_obj.resolution # be explicit about dataset resolution
-        c.dataset_kwargs.max_size = len(dataset_obj) # be explicit about dataset size
-        if opts.cond and not dataset_obj.has_labels:
-            raise click.ClickException('--cond=True requires labels specified in dataset.json')
-        del dataset_obj # conserve memory
-    except IOError as err:
-        raise click.ClickException(f'--data: {err}')
 
     # Network architecture.
     c.network_kwargs.update(model_type='DualUNet', embedding_type='positional', encoder_type='standard', decoder_type='standard')
@@ -193,8 +181,9 @@ def main(**kwargs):
         c.resume_state_dump = opts.resume
 
     # Description string.
-    cond_str = 'cond' if c.dataset_kwargs.use_labels else 'uncond'
+    cond_str = 'cond' if c.datasets_kwargs[0].use_labels else 'uncond'
     dtype_str = 'fp16' if c.network_kwargs.use_fp16 else 'fp32'
+    dataset_name = "_".join([os.path.basename(name).split(".")[0] for name in opts.data])
     desc = f'{dataset_name:s}-{cond_str:s}-{opts.arch:s}-{opts.precond:s}-gpus{dist.get_world_size():d}-batch{c.batch_size:d}-{dtype_str:s}'
     if opts.desc is not None:
         desc += f'-{opts.desc}'
@@ -220,8 +209,8 @@ def main(**kwargs):
     dist.print0(json.dumps(c, indent=2))
     dist.print0()
     dist.print0(f'Output directory:        {c.run_dir}')
-    dist.print0(f'Dataset path:            {c.dataset_kwargs.path}')
-    dist.print0(f'Class-conditional:       {c.dataset_kwargs.use_labels}')
+    dist.print0('Dataset paths:            {}'.format(" ".join([os.path.basename(name).split(".")[0] for name in opts.data])))
+    dist.print0(f'Class-conditional:       {c.datasets_kwargs[0].use_labels}')
     dist.print0(f'Network architecture:    {opts.arch}')
     dist.print0(f'Preconditioning & loss:  {opts.precond}')
     dist.print0(f'Number of GPUs:          {dist.get_world_size()}')
