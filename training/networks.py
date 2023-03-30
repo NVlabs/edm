@@ -174,7 +174,7 @@ class SpectralConv2d(nn.Module):
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
         # TODO(dahoas): Sampling from the end samples higher modes for larger images
-        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w1)
+        #out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w1)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
