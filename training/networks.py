@@ -66,12 +66,15 @@ class Conv2d(torch.nn.Module):
         f = f.ger(f).unsqueeze(0).unsqueeze(1) / f.sum().square()
         self.register_buffer('resample_filter', f if up or down else None)
 
-    def forward(self, x):
+    def forward(self, x, out_h=None, out_w=None):
         w = self.weight.to(x.dtype) if self.weight is not None else None
         b = self.bias.to(x.dtype) if self.bias is not None else None
         f = self.resample_filter.to(x.dtype) if self.resample_filter is not None else None
         w_pad = w.shape[-1] // 2 if w is not None else 0
+        # Adjust f_pad to fit down/up size
         f_pad = (f.shape[-1] - 1) // 2 if f is not None else 0
+        out_pad = 0 if out_h is None else out_h % 2  # Odd targets need output padding
+
 
         if self.fused_resample and self.up and w is not None:
             x = torch.nn.functional.conv_transpose2d(x, f.mul(4).tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=max(f_pad - w_pad, 0))
@@ -81,8 +84,9 @@ class Conv2d(torch.nn.Module):
             x = torch.nn.functional.conv2d(x, f.tile([self.out_channels, 1, 1, 1]), groups=self.out_channels, stride=2)
         else:
             if self.up:
-                x = torch.nn.functional.conv_transpose2d(x, f.mul(4).tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=f_pad)
+                x = torch.nn.functional.conv_transpose2d(x, f.mul(4).tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=f_pad, output_padding=out_pad)
             if self.down:
+                # f.tile([self.in_channels, 1, ,1, 1]) has shape (self.in_channels, 1, 2, 2)
                 x = torch.nn.functional.conv2d(x, f.tile([self.in_channels, 1, 1, 1]), groups=self.in_channels, stride=2, padding=f_pad)
             if w is not None:
                 x = torch.nn.functional.conv2d(x, w, padding=w_pad)
@@ -141,6 +145,7 @@ class SpectralConv2d(nn.Module):
 
         self.scale = (1 / (in_channels * out_channels))
         self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
         
     # Complex multiplication
     def compl_mul2d(self, input, weights):
@@ -148,20 +153,22 @@ class SpectralConv2d(nn.Module):
         return torch.einsum("bixyt,ioxyt->boxyt", input, weights)
 
     # Downsampling by truncating fourier modes?
-    def forward(self, x):
+    def forward(self, x, out_h=None, out_w=None):
         # TODO(dahoas): Fix hack
         print("Spec conv input, weights: ", x.shape, self.weights1.shape) if self.verbose else None
         w1 = self.weights1.to(x.dtype)
+        w2 = self.weights2.to(x.dtype)
         batchsize, c, h, w = x.shape
-        if self.down:
-            out_h = h // 2
-            out_w = w // 2
-        elif self.up:
-            out_h = 2 * h
-            out_w = 2 * w
-        else:
-            out_h = h
-            out_w = w
+        if out_h is None and out_w is None:
+            if self.down:
+                out_h = h // 2
+                out_w = w // 2
+            elif self.up:
+                out_h = 2 * h
+                out_w = 2 * w
+            else:
+                out_h = h
+                out_w = w
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
         x_ft = torch.view_as_real(x_ft)
@@ -174,7 +181,7 @@ class SpectralConv2d(nn.Module):
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
         # TODO(dahoas): Sampling from the end samples higher modes for larger images
-        #out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w1)
+        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w2)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
@@ -203,9 +210,9 @@ class DualConv(nn.Module):
         self.spectral_conv = SpectralConv2d(in_channels, out_channels, modes1, modes2, up, down, verbose) if use_spectral else None
         self.verbose = verbose
 
-    def forward(self, x):
-        spatial_out = self.spatial_conv(x) if self.use_spatial else 0
-        spectral_out = self.spectral_conv(x) if self.use_spectral else 0
+    def forward(self, x, out_h=None, out_w=None):
+        spatial_out = self.spatial_conv(x, out_h=out_h, out_w=out_w) if self.use_spatial else 0
+        spectral_out = self.spectral_conv(x, out_h=out_h, out_w=out_w) if self.use_spectral else 0
         print("Spatial out nan: {}, Spectral out nan: {}".format(torch.any(spatial_out.isnan()) if type(spatial_out) is not int else False, torch.any(spectral_out.isnan()) if type(spectral_out) is not int else False)) if self.verbose else None
         # TODO(dahoas): Try other combination techniques
         return spatial_out + spectral_out
@@ -289,6 +296,7 @@ class DualUNetBlock(torch.nn.Module):
 
         self.skip = None
         if out_channels != in_channels or up or down:
+            # TODO(dahoas): This should probably be turned into a dual convolution
             kernel = 1 if resample_proj or out_channels!= in_channels else 0
             self.skip = Conv2d(in_channels=in_channels, out_channels=out_channels, kernel=kernel, up=up, down=down, resample_filter=resample_filter, **init)
 
@@ -297,9 +305,10 @@ class DualUNetBlock(torch.nn.Module):
             self.qkv = Conv2d(in_channels=out_channels, out_channels=out_channels*3, kernel=1, **(init_attn if init_attn is not None else init))
             self.proj = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=1, **init_zero)
 
-    def forward(self, x, emb):
+    def forward(self, x, emb, out_h=None, out_w=None):
         orig = x
-        x = self.conv0(silu(self.norm0(x)))
+        # Only need to pass out_h, out_w to the up/down sampling layer
+        x = self.conv0(silu(self.norm0(x)), out_h=out_h, out_w=out_w)
         
         params = self.affine(emb).unsqueeze(2).unsqueeze(3).to(x.dtype)
         if self.adaptive_scale:
@@ -488,10 +497,12 @@ class DualUNet(torch.nn.Module):
         # Encoder.
         skips = []
         aux = x
+        resolution_levels = []  # Tracks output resolutions of ith layer
         for name, block in self.enc.items():
             x = block(x, emb) if isinstance(block, DualUNetBlock) else block(x)
             print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
             skips.append(x)
+            resolution_levels.append(list(x.shape[-2:])) if block.down else None
 
         # Decoder.
         aux = None
@@ -505,7 +516,8 @@ class DualUNet(torch.nn.Module):
             else:
                 if x.shape[1] != block.in_channels:
                     x = torch.cat([x, skips.pop()], dim=1)
-                x = block(x, emb)
+                out_h, out_w = resolution_levels.pop() if block.up else None
+                x = block(x, emb, out_h=out_h, out_w=out_w)
                 print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
         return aux
 
