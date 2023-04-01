@@ -209,11 +209,14 @@ class DualConv(nn.Module):
                                    resample_filter, fused_resample, init_mode, init_weight, init_bias) if use_spatial else None
         self.spectral_conv = SpectralConv2d(in_channels, out_channels, modes1, modes2, up, down, verbose) if use_spectral else None
         self.verbose = verbose
+        self.up = up
+        self.down = down
 
     def forward(self, x, out_h=None, out_w=None):
         spatial_out = self.spatial_conv(x, out_h=out_h, out_w=out_w) if self.use_spatial else 0
         spectral_out = self.spectral_conv(x, out_h=out_h, out_w=out_w) if self.use_spectral else 0
         print("Spatial out nan: {}, Spectral out nan: {}".format(torch.any(spatial_out.isnan()) if type(spatial_out) is not int else False, torch.any(spectral_out.isnan()) if type(spectral_out) is not int else False)) if self.verbose else None
+        print("Spatial out size: {}", "Spectral out size: {}".format(spatial_out.shape if type(spatial_out) is not int else None, spectral_out.shape if type(spectral_out) is not int else None))
         # TODO(dahoas): Try other combination techniques
         return spatial_out + spectral_out
 
@@ -499,10 +502,13 @@ class DualUNet(torch.nn.Module):
         aux = x
         resolution_levels = []  # Tracks output resolutions of ith layer
         for name, block in self.enc.items():
+            # Keep track of resolution we are downsampling from
+            resolution_levels.append(list(x.shape[-2:])) if block.down else None
             x = block(x, emb) if isinstance(block, DualUNetBlock) else block(x)
             print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
             skips.append(x)
-            resolution_levels.append(list(x.shape[-2:])) if block.down else None
+
+        print("res levels: ", resolution_levels) if self.verbose else None
 
         # Decoder.
         aux = None
@@ -516,7 +522,8 @@ class DualUNet(torch.nn.Module):
             else:
                 if x.shape[1] != block.in_channels:
                     x = torch.cat([x, skips.pop()], dim=1)
-                out_h, out_w = resolution_levels.pop() if block.up else None
+                out_h, out_w = resolution_levels.pop() if block.up else [None, None]
+                print("out_h: ", out_h, "out_w: ", out_w) if self.verbose else None
                 x = block(x, emb, out_h=out_h, out_w=out_w)
                 print("Out shape at block {}: {}\nHas nan: {}".format(name, x.shape, torch.any(x.isnan()))) if self.verbose else None
         return aux
