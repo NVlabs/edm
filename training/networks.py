@@ -215,8 +215,8 @@ class DualConv(nn.Module):
     def forward(self, x, out_h=None, out_w=None):
         spatial_out = self.spatial_conv(x, out_h=out_h, out_w=out_w) if self.use_spatial else 0
         spectral_out = self.spectral_conv(x, out_h=out_h, out_w=out_w) if self.use_spectral else 0
-        print("Spatial out nan: {}, Spectral out nan: {}".format(torch.any(spatial_out.isnan()) if type(spatial_out) is not int else False, torch.any(spectral_out.isnan()) if type(spectral_out) is not int else False)) if self.verbose else None
-        print("Spatial out size: {}", "Spectral out size: {}".format(spatial_out.shape if type(spatial_out) is not int else None, spectral_out.shape if type(spectral_out) is not int else None))
+        print("Spatial out nan: {}, Spectral out nan: {}".format(torch.any(spatial_out.isnan()) if self.use_spatial else False, torch.any(spectral_out.isnan()) if self.use_spectral else False)) if self.verbose else None
+        print("Spatial out size: {}, Spectral out size: {}".format(spatial_out.shape if self.use_spatial else None, spectral_out.shape if self.use_spectral else None)) if self.verbose else None
         # TODO(dahoas): Try other combination techniques
         return spatial_out + spectral_out
 
@@ -321,7 +321,7 @@ class DualUNetBlock(torch.nn.Module):
             x = silu(self.norm1(x.add_(params)))
 
         x = self.conv1(torch.nn.functional.dropout(x, p=self.dropout, training=self.training))
-        x = x.add_(self.skip(orig) if self.skip is not None else orig)
+        x = x.add_(self.skip(orig, out_h=out_h, out_w=out_w) if self.skip is not None else orig)
         x = x * self.skip_scale
 
         if self.num_heads:

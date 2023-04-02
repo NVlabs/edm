@@ -1,0 +1,27 @@
+Loading datasets...
+Traceback (most recent call last):
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 240, in <module>
+    main()
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1130, in __call__
+    return self.main(*args, **kwargs)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1055, in main
+    rv = self.invoke(ctx)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 1404, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/mnt/nvme/home/alex/.envs/diffusion/lib/python3.9/site-packages/click/core.py", line 760, in invoke
+    return __callback(*args, **kwargs)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/train.py", line 235, in main
+    training_loop.training_loop(**c)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/training/training_loop.py", line 73, in training_loop
+    dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # subclass of training.dataset.Dataset
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/dnnlib/util.py", line 302, in construct_class_by_name
+    return call_func_by_name(*args, func_name=class_name, **kwargs)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/dnnlib/util.py", line 297, in call_func_by_name
+    return func_obj(*args, **kwargs)
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/training/dataset.py", line 184, in __init__
+    self._all_fnames = set(self._get_zipfile().namelist())
+  File "/mnt/nvme/home/alex/repos/diffusion/edm/training/dataset.py", line 206, in _get_zipfile
+    self._zipfile = zipfile.ZipFile(self._path)
+  File "/mnt/nvme/home/alex/miniconda3/lib/python3.9/zipfile.py", line 1248, in __init__
+    self.fp = io.open(file, filemode)
+FileNotFoundError: [Errno 2] No such file or directory: 'datasets/ffhq-33x33.zip'
