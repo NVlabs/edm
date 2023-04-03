@@ -127,7 +127,7 @@ def _contract_cp(x, cp_weight, separable=False):
 
 
 class SpectralConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, modes1, modes2, up=False, down=False, verbose=False):
+    def __init__(self, in_channels, out_channels, max_size, modes1, modes2, up=False, down=False, verbose=False):
         super(SpectralConv2d, self).__init__()
 
         """
@@ -143,9 +143,24 @@ class SpectralConv2d(nn.Module):
 
         self.verbose = verbose
 
+        # TODO (kevin) : Not hardcode
+        self.number_of_extra_blocks = 4 #  Number of smaller blocks I'm grabing 
+        self.max_size_1 = 128
+        self.block_size_1 = (self.max_size_1-self.modes1)/self.number_of_extra_blocks
+        self.block_size_2 = ((self.max_size_1 + 2)/2 - self.modes2)/self.number_of_extra_blocks
+
         self.scale = (1 / (in_channels * out_channels))
-        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
-        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+
+        self.weights = []
+
+        weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+        self.weights.append(weights1)
+
+        in_x = self.modes1
+        in_y = self.modes2
+        for i in range(self.number_of_extra_blocks):
+            self.weights.append(self.scale * torch.rand(in_channels, out_channels, self.block_size_1, self.block_size_2, 2))
+            # TODO (kevin) : Not hardcode
         
     # Complex multiplication
     def compl_mul2d(self, input, weights):
@@ -179,9 +194,17 @@ class SpectralConv2d(nn.Module):
         #print("weights device: ", self.weights1.device, "weights dtype: ", self.weights1.dtype)
         #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
+
+
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
-        # TODO(dahoas): Sampling from the end samples higher modes for larger images
-        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w2)
+
+        in_x = self.modes1
+        in_y = self.modes2
+        for i in range(self.number_of_extra_blocks):
+            out_ft[:, :, in_x:in_x + self.block_size_1, in_y: in_y + self.block_size_2] = self.compl_mul2d(x_ft[:, :, in_x:in_x+self.block_size_1, in_y:in_y+self.block_size_2], self.weights[i+1])
+            # TODO (kevin) : Not hardcode
+            in_x+= self.block_size_1
+            in_y+= self.block_size_2
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
@@ -193,7 +216,7 @@ class SpectralConv2d(nn.Module):
 #---------------------------------------------------------------------------
 class DualConv(nn.Module):
     def __init__(self, 
-        in_channels, out_channels, kernel, 
+        in_channels, out_channels, kernel, max_size,
         modes1, modes2,
         bias=True, up=False, down=False, resample_filter=[1,1], fused_resample=False, init_mode='kaiming_normal', init_weight=1, init_bias=0, 
         use_spatial=True, use_spectral=True, verbose=False):
@@ -207,7 +230,7 @@ class DualConv(nn.Module):
         self.use_spectral = use_spectral
         self.spatial_conv = Conv2d(in_channels, out_channels, kernel, bias, up, down, 
                                    resample_filter, fused_resample, init_mode, init_weight, init_bias) if use_spatial else None
-        self.spectral_conv = SpectralConv2d(in_channels, out_channels, modes1, modes2, up, down, verbose) if use_spectral else None
+        self.spectral_conv = SpectralConv2d(in_channels, out_channels, max_size, modes1, modes2, up, down, verbose) if use_spectral else None
         self.verbose = verbose
         self.up = up
         self.down = down
@@ -289,7 +312,7 @@ class DualUNetBlock(torch.nn.Module):
 
 
         self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
-        self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, up=up, down=down, resample_filter=resample_filter, **init,
+        self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, max_size = up=up, down=down, resample_filter=resample_filter, **init,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
         self.conv1 = DualConv(in_channels=out_channels, out_channels=out_channels, kernel=3, resample_filter=resample_filter, **init_zero,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
