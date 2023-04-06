@@ -11,7 +11,7 @@
 import numpy as np
 import torch
 from torch_utils import persistence
-from torch.nn.functional import silu
+from torch.nn.functional import silu,pad
 from torch import nn
 
 #----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ def _contract_cp(x, cp_weight, separable=False):
 
 
 class SpectralConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, max_size, modes1, modes2, up=False, down=False, verbose=False):
+    def __init__(self, in_channels, out_channels, max_fourier_modes, modes1, modes2, up=False, down=False, verbose=False):
         super(SpectralConv2d, self).__init__()
 
         """
@@ -136,6 +136,8 @@ class SpectralConv2d(nn.Module):
         print("Initializing fourier layer...")
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.max_fourier_modes1 = max_fourier_modes # Maximum number of fourier modes that we will take into account in the 1st dimension
+        self.max_fourier_modes2 = max_fourier_modes//2 + 1 # Maximum number of fourier modes that we will take into account in the 2nd dimension
         self.modes1 = modes1 #Number of Fourier modes to multiply, at most floor(N/2) + 1
         self.modes2 = modes2
         self.down = down
@@ -143,25 +145,10 @@ class SpectralConv2d(nn.Module):
 
         self.verbose = verbose
 
-        # TODO (kevin) : Not hardcode
-        self.number_of_extra_blocks = 4 #  Number of smaller blocks I'm grabing 
-        self.max_size_1 = 128
-        self.block_size_1 = (self.max_size_1-self.modes1)/self.number_of_extra_blocks
-        self.block_size_2 = ((self.max_size_1 + 2)/2 - self.modes2)/self.number_of_extra_blocks
-
         self.scale = (1 / (in_channels * out_channels))
-
-        self.weights = []
-
-        weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
-        self.weights.append(weights1)
-
-        in_x = self.modes1
-        in_y = self.modes2
-        for i in range(self.number_of_extra_blocks):
-            self.weights.append(self.scale * torch.rand(in_channels, out_channels, self.block_size_1, self.block_size_2, 2))
-            # TODO (kevin) : Not hardcode
-        
+        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+        self.weights2 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, self.modes2, 2))
+       
     # Complex multiplication
     def compl_mul2d(self, input, weights):
         # (batch, in_channel, x,y), (in_channel, out_channel, x,y) -> (batch, out_channel, x,y)
@@ -186,7 +173,19 @@ class SpectralConv2d(nn.Module):
                 out_w = w
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
+        dim1, dim2 = x_ft.shape[2,3]
+        print(f"Current dimensions are {dim1},{dim2}") if self.verbose else None
+        if dim1 < self.max_fourier_modes:
+            x_ft = pad(x_ft,(0,0,
+                            0,0,
+                            0,self.max_fourier_modes1 - dim1,
+                            0,self.max_fourier_modes2 - dim2))
+        else : 
+            x_ft = x_ft[:,:,:self.max_fourier_modes1, :self.max_fourier_modes2]
+        dim1, dim2 = x_ft.shape[2,3]
+        print(f"New dimensions are {dim1},{dim2}") if self.verbose else None
         x_ft = torch.view_as_real(x_ft)
+
 
         # Multiply relevant Fourier modes
         out_ft = torch.zeros((batchsize, self.out_channels,  out_h, out_w//2 + 1, 2), device=x.device, dtype=x.dtype)
@@ -194,17 +193,9 @@ class SpectralConv2d(nn.Module):
         #print("weights device: ", self.weights1.device, "weights dtype: ", self.weights1.dtype)
         #exit()
         print("out_ft shape: {}".format(out_ft.shape)) if self.verbose else None
-
-
         out_ft[:, :, :self.modes1, :self.modes2] = self.compl_mul2d(x_ft[:, :, :self.modes1, :self.modes2], w1)
-
-        in_x = self.modes1
-        in_y = self.modes2
-        for i in range(self.number_of_extra_blocks):
-            out_ft[:, :, in_x:in_x + self.block_size_1, in_y: in_y + self.block_size_2] = self.compl_mul2d(x_ft[:, :, in_x:in_x+self.block_size_1, in_y:in_y+self.block_size_2], self.weights[i+1])
-            # TODO (kevin) : Not hardcode
-            in_x+= self.block_size_1
-            in_y+= self.block_size_2
+        # TODO(dahoas): Sampling from the end samples higher modes for larger images
+        out_ft[:, :, -self.modes1:, :self.modes2] = self.compl_mul2d(x_ft[:, :, -self.modes1:, :self.modes2], w2)
 
         #Return to physical space
         out_ft = torch.view_as_complex(out_ft)
@@ -216,7 +207,8 @@ class SpectralConv2d(nn.Module):
 #---------------------------------------------------------------------------
 class DualConv(nn.Module):
     def __init__(self, 
-        in_channels, out_channels, kernel, max_size,
+        in_channels, out_channels, kernel, 
+        max_fourier_modes,
         modes1, modes2,
         bias=True, up=False, down=False, resample_filter=[1,1], fused_resample=False, init_mode='kaiming_normal', init_weight=1, init_bias=0, 
         use_spatial=True, use_spectral=True, verbose=False):
@@ -230,7 +222,7 @@ class DualConv(nn.Module):
         self.use_spectral = use_spectral
         self.spatial_conv = Conv2d(in_channels, out_channels, kernel, bias, up, down, 
                                    resample_filter, fused_resample, init_mode, init_weight, init_bias) if use_spatial else None
-        self.spectral_conv = SpectralConv2d(in_channels, out_channels, max_size, modes1, modes2, up, down, verbose) if use_spectral else None
+        self.spectral_conv = SpectralConv2d(in_channels, out_channels, max_fourier_modes, modes1, modes2, up, down, verbose) if use_spectral else None
         self.verbose = verbose
         self.up = up
         self.down = down
@@ -290,6 +282,7 @@ class DualUNetBlock(torch.nn.Module):
     def __init__(self,
         in_channels, out_channels, emb_channels, 
         modes1, modes2,
+        max_fourier_modes,
         up=False, down=False, attention=False,
         num_heads=None, channels_per_head=64, dropout=0, skip_scale=1, eps=1e-5,
         resample_filter=[1,1], resample_proj=False, adaptive_scale=True,
@@ -312,9 +305,13 @@ class DualUNetBlock(torch.nn.Module):
 
 
         self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
-        self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, max_size = up=up, down=down, resample_filter=resample_filter, **init,
+        self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, max_fourier_modes=max_fourier_modes ,up=up, down=down, resample_filter=resample_filter, **init,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
-        self.conv1 = DualConv(in_channels=out_channels, out_channels=out_channels, kernel=3, resample_filter=resample_filter, **init_zero,
+        
+        max_fourier_modes = max_fourier_modes*2 if up else max_fourier_modes
+        max_fourier_modes = max_fourier_modes//2 if down else max_fourier_modes
+
+        self.conv1 = DualConv(in_channels=out_channels, out_channels=out_channels, kernel=3, max_fourier_modes=max_fourier_modes, resample_filter=resample_filter, **init_zero,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
 
         self.affine = Linear(in_features=emb_channels, out_features=out_channels*(2 if adaptive_scale else 1), **init)
@@ -417,6 +414,7 @@ class DualUNet(torch.nn.Module):
         mode                = "dual",        # Run convs in def/fourier/dual mode
         modes1_list         = None,           # Number of fourier modes to take in first dim
         modes2_list         = None,           # Number of fourier modes to take in second dim
+        max_fourier_modes = 128,
         dual_block_thresh   = -1,
         random_fourier_feature = None,      # Random matrix B such that we map a vector v -> cos(2piBv),sin(2piBv)
         verbose             = False,         # For print debugging
@@ -457,12 +455,13 @@ class DualUNet(torch.nn.Module):
         for level, mult in enumerate(channel_mult):
             modes1, modes2 = modes1_list[level], modes2_list[level]
             block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
+            max_f_modes_level = max_fourier_modes//2**level
             if level == 0:
                 cin = cout
                 cout = model_channels
-                self.enc[f'{level}_conv'] = DualConv(in_channels=cin, out_channels=cout, kernel=3, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init)
+                self.enc[f'{level}_conv'] = DualConv(in_channels=cin, out_channels=cout, kernel=3, max_fourier_modes=max_f_modes_level,modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init)
             else:
-                self.enc[f'{level}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, down=True, modes1=modes1, modes2=modes2, **block_kwargs)
+                self.enc[f'{level}_down'] = DualUNetBlock(in_channels=cout, out_channels=cout, max_fourier_modes = max_f_modes_level,down=True, modes1=modes1, modes2=modes2, **block_kwargs)
             for idx in range(num_blocks):
                 cin = cout
                 cout = model_channels * mult
@@ -477,23 +476,25 @@ class DualUNet(torch.nn.Module):
             #TODO(dahoas): Actually fourier layers end one level lower on encder vs. decoder because of upsampling
             # But actually this also true of the fourier layers in the encoder after down-sampling
             block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
-            if level == len(channel_mult) - 1:
-                self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, modes1=modes1, modes2=modes2, **block_kwargs)
-                self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout, modes1=modes1, modes2=modes2, **block_kwargs)
+            num_channel_mult = len(channel_mult)
+            max_f_modes_level = max_fourier_modes//2**(num_channel_mult - level - 1)
+            if level == num_channel_mult - 1:
+                self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, max_fourier_modes = max_f_modes_level, modes1=modes1, modes2=modes2, **block_kwargs)
+                self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout,  max_fourier_modes = max_f_modes_level, modes1=modes1, modes2=modes2, **block_kwargs)
             else:
                 # For dual upsampling block cannot use full set of modes yet. First must upsample!
                 # This block may also only use a spatial convolution if it is at the dual_block_thresh
                 block_kwargs["use_spectral"] = level+1 <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
-                self.dec[f'{level}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True, modes1=modes1_list[level+1], modes2=modes2_list[level+1], **block_kwargs)
+                self.dec[f'{level}_up'] = DualUNetBlock(in_channels=cout, out_channels=cout, up=True,  max_fourier_modes = max_f_modes_level, modes1=modes1_list[level+1], modes2=modes2_list[level+1], **block_kwargs)
                 block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
             for idx in range(num_blocks + 1):
                 cin = cout + skips.pop()
                 cout = model_channels * mult
                 attn = (idx == num_blocks and level in attn_levels)
-                self.dec[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
+                self.dec[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, max_fourier_modes=max_f_modes_level, modes1=modes1, modes2=modes2, **block_kwargs)
             if level == 0:
                 self.dec[f'{level}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
-                self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init_zero)
+                self.dec[f'{level}_aux_conv'] = DualConv(in_channels=cout, out_channels=out_channels, kernel=3, max_fourier_modes = max_f_modes_level, modes1=modes1, modes2=modes2, use_spatial=block_kwargs["use_spatial"], use_spectral=block_kwargs["use_spectral"], **init_zero)
 
     def fourier_projection(self, v):
         B = self.random_projection_matrix
