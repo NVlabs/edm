@@ -173,7 +173,7 @@ class SpectralConv2d(nn.Module):
                 out_w = w
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
-        dim1, dim2 = x_ft.shape[2,3]
+        dim1, dim2 = x_ft.shape[2:3]
         print(f"Current dimensions are {dim1},{dim2}") if self.verbose else None
         if dim1 < self.max_fourier_modes:
             x_ft = pad(x_ft,(0,0,
@@ -466,7 +466,7 @@ class DualUNet(torch.nn.Module):
                 cin = cout
                 cout = model_channels * mult
                 attn = (level in attn_levels)
-                self.enc[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
+                self.enc[f'{level}_block{idx}'] = DualUNetBlock(in_channels=cin, out_channels=cout, max_fourier_modes = max_f_modes_level, attention=attn, modes1=modes1, modes2=modes2, **block_kwargs)
         skips = [block.out_channels for name, block in self.enc.items() if 'aux' not in name]
 
         # Decoder.
