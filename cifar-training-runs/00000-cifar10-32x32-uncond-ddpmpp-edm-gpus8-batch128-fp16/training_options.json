@@ -1,13 +1,13 @@
 {
-  "dataset_kwargs": {
-    "class_name": "training.dataset.ImageFolderDataset",
-    "path": "datasets/cifar10-32x32.zip",
-    "use_labels": false,
-    "xflip": false,
-    "cache": true,
-    "resolution": 32,
-    "max_size": 50000
-  },
+  "datasets_kwargs": [
+    {
+      "class_name": "training.dataset.ImageFolderDataset",
+      "path": "/mnt/nvme/home/alex/repos/diffusion/edm/datasets/cifar10-32x32.zip",
+      "use_labels": false,
+      "xflip": false,
+      "cache": true
+    }
+  ],
   "data_loader_kwargs": {
     "pin_memory": true,
     "num_workers": 1,
@@ -31,10 +31,12 @@
       2
     ],
     "mode": "dual",
+    "verbose": false,
     "num_blocks": 4,
     "attn_levels": [
       2
     ],
+    "max_fourier_modes": 32,
     "modes1_list": [
       16,
       8,
@@ -84,6 +86,6 @@
   "kimg_per_tick": 50,
   "snapshot_ticks": 25,
   "state_dump_ticks": 500,
-  "seed": 1273242334,
+  "seed": 1816687838,
   "run_dir": "cifar-training-runs/00000-cifar10-32x32-uncond-ddpmpp-edm-gpus8-batch128-fp16"
 }

@@ -1,3 +1,0 @@
-Loading dataset...
-{'class_name': 'training.dataset.ImageFolderDataset', 'path': 'datasets/ffhq-256x256.zip', 'use_labels': False, 'xflip': False, 'cache': True, 'resolution': 256, 'max_size': 70000}
-{'pin_memory': True, 'num_workers': 1, 'prefetch_factor': 2}

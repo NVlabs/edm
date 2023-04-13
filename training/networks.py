@@ -173,17 +173,16 @@ class SpectralConv2d(nn.Module):
                 out_w = w
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
-        dim1, dim2 = x_ft.shape[2:3]
-        print(f"Current dimensions are {dim1},{dim2}") if self.verbose else None
-        if dim1 < self.max_fourier_modes:
-            x_ft = pad(x_ft,(0,0,
-                            0,0,
+        dim1, dim2 = x_ft.shape[2:]
+        if dim1 < self.max_fourier_modes1:
+            x_ft = pad(x_ft,(
+                            0,self.max_fourier_modes2 - dim2,
                             0,self.max_fourier_modes1 - dim1,
-                            0,self.max_fourier_modes2 - dim2))
+                            0,0,
+                            0,0))
         else : 
             x_ft = x_ft[:,:,:self.max_fourier_modes1, :self.max_fourier_modes2]
-        dim1, dim2 = x_ft.shape[2,3]
-        print(f"New dimensions are {dim1},{dim2}") if self.verbose else None
+        dim1, dim2 = x_ft.shape[2:]
         x_ft = torch.view_as_real(x_ft)
 
 
@@ -303,13 +302,13 @@ class DualUNetBlock(torch.nn.Module):
         self.down = down
         self.up = up
 
+        max_fourier_modes = max_fourier_modes*2 if up else max_fourier_modes
+        max_fourier_modes = max_fourier_modes//2 if down else max_fourier_modes
+
 
         self.norm0 = GroupNorm(num_channels=in_channels, eps=eps)
         self.conv0 = DualConv(in_channels=in_channels, out_channels=out_channels, kernel=3, max_fourier_modes=max_fourier_modes ,up=up, down=down, resample_filter=resample_filter, **init,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
-        
-        max_fourier_modes = max_fourier_modes*2 if up else max_fourier_modes
-        max_fourier_modes = max_fourier_modes//2 if down else max_fourier_modes
 
         self.conv1 = DualConv(in_channels=out_channels, out_channels=out_channels, kernel=3, max_fourier_modes=max_fourier_modes, resample_filter=resample_filter, **init_zero,
                               modes1=modes1, modes2=modes2, use_spatial=use_spatial, use_spectral=use_spectral, verbose=verbose)
@@ -477,7 +476,7 @@ class DualUNet(torch.nn.Module):
             # But actually this also true of the fourier layers in the encoder after down-sampling
             block_kwargs["use_spectral"] = level <= dual_block_thresh if mode=="dual" else block_kwargs["use_spectral"]
             num_channel_mult = len(channel_mult)
-            max_f_modes_level = max_fourier_modes//2**(num_channel_mult - level - 1)
+            max_f_modes_level = max_fourier_modes//2**level
             if level == num_channel_mult - 1:
                 self.dec[f'{level}_in0'] = DualUNetBlock(in_channels=cout, out_channels=cout, attention=True, max_fourier_modes = max_f_modes_level, modes1=modes1, modes2=modes2, **block_kwargs)
                 self.dec[f'{level}_in1'] = DualUNetBlock(in_channels=cout, out_channels=cout,  max_fourier_modes = max_f_modes_level, modes1=modes1, modes2=modes2, **block_kwargs)

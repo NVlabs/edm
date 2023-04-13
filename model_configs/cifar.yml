@@ -2,6 +2,7 @@ channel_mult: [1, 2, 2, 2]
 num_blocks: 4
 attn_levels: [2]
 
+max_fourier_modes: 32
 modes1_list: [16, 8, 4, null]
 modes2_list: [9, 5, 3, null]
 dual_block_thresh: 2
