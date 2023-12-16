@@ -19,6 +19,8 @@ import PIL.Image
 import dnnlib
 from torch_utils import distributed as dist
 
+from linear_sampler import get_linear_sampler_kwargs, sample_linear_fn
+
 #----------------------------------------------------------------------------
 # Proposed EDM sampler (Algorithm 2).
 
@@ -288,6 +290,11 @@ def main(network_pkl, outdir, subdirs, seeds, class_idx, max_batch_size, device=
             class_labels[:, class_idx] = 1
 
         # Generate images.
+        # TODO: precompute latents
+        if 'skip_method' in sampler_kwargs:
+            linear_sampler_kwargs = get_linear_sampler_kwargs(sampler_kwargs)
+            latents = sample_linear_fn(latents, **linear_sampler_kwargs)
+
         sampler_kwargs = {key: value for key, value in sampler_kwargs.items() if value is not None}
         have_ablation_kwargs = any(x in sampler_kwargs for x in ['solver', 'discretization', 'schedule', 'scaling'])
         sampler_fn = ablation_sampler if have_ablation_kwargs else edm_sampler
