@@ -5,7 +5,8 @@ import torchvision.transforms as transforms
 from tensordict import TensorDict
 
 def load_dataset(name):
-    transform = transforms.Compose([transforms.ToTensor()]) # add normalization
+    transform = transforms.Compose([transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
 
     if name == "CIFAR10":
         dataset = CIFAR10(root='./data', train=True, download=True, transform=transform)
