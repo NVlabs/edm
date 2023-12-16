@@ -1,6 +1,7 @@
 import torch
 from pathlib import Path
 
+
 def get_linear_sampler_kwargs(sampler_kwargs, device):
     linear_sampler_kwargs = {
         "skip_method": sampler_kwargs.pop("skip_method"),

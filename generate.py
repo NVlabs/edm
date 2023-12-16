@@ -290,7 +290,6 @@ def main(network_pkl, outdir, subdirs, seeds, class_idx, max_batch_size, device=
             class_labels[:, class_idx] = 1
 
         # Generate images.
-        # TODO: precompute latents
         if 'skip_method' in sampler_kwargs:
             linear_sampler_kwargs = get_linear_sampler_kwargs(sampler_kwargs)
             latents = sample_linear_fn(latents, **linear_sampler_kwargs)
