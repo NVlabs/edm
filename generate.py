@@ -19,7 +19,7 @@ import PIL.Image
 import dnnlib
 from torch_utils import distributed as dist
 
-from linear_sampler import get_linear_sampler_kwargs, sample_linear_fn
+from linear_sampler import get_linear_sampler_kwargs, linear_sampler
 
 #----------------------------------------------------------------------------
 # Proposed EDM sampler (Algorithm 2).
