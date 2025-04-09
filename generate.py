@@ -19,9 +19,112 @@ import PIL.Image
 import dnnlib
 from torch_utils import distributed as dist
 
+def edm_to_dpm_denoiser(denoised, x, sigma):
+    return (x - denoised) / sigma
+
+
+def dpm_net(net, class_labels, x, sigma):
+    denoised = net(x, sigma, class_labels).to(torch.float64)
+    return edm_to_dpm_denoiser(denoised, x, sigma)
+
+
+# Simple, alpha(t) = 1, sigma(t) = t
+# => lambda(t) = -log(t)
+# => t_lambda(x) = exp(-x)
+def dpm_solver_2_step(net, class_labels, x, t_cur, t_nxt):
+    def dpm_lambda(t):
+        return -torch.log(t)
+    
+    def dpm_t_lambda(l):
+        return torch.exp(-l)
+
+    lambda_cur = dpm_lambda(t_cur)
+    lambda_nxt = dpm_lambda(t_nxt)
+    h = lambda_nxt - lambda_cur
+
+    # Step 1
+    s = dpm_t_lambda((lambda_cur + lambda_nxt) / 2)
+
+    # Step 2
+    eps_x = dpm_net(net, class_labels, x, t_cur)
+    u = x - s * (torch.exp(h / 2) - 1) * eps_x
+
+    # Step 3
+    eps_u = dpm_net(net, class_labels, u, s)
+    x_nxt = x - t_nxt * (torch.exp(h) - 1) * eps_u
+
+    return x_nxt
+
+
+# Simple, see solver_2
+def dpm_solver_3_step(net, class_labels, x, t_cur, t_nxt):
+    def dpm_lambda(t):
+        return -torch.log(t)
+    
+    def dpm_t_lambda(l):
+        return torch.exp(-l)
+    
+    # Fixed, TODO: specify as args
+    r1 = 1 / 3
+    r2 = 2 / 3
+    
+    lambda_cur = dpm_lambda(t_cur)
+    lambda_nxt = dpm_lambda(t_nxt)
+    h = lambda_nxt - lambda_cur
+
+    # Step 1
+    s_cur = dpm_t_lambda(lambda_cur + r1 * h)
+    s_nxt = dpm_t_lambda(lambda_cur + r2 * h)
+
+    # Step 2
+    eps_x = dpm_net(net, class_labels, x, t_cur)
+    u_cur = x - s_cur * (torch.exp(r1 * h) - 1) * eps_x
+
+    # Step 3
+    D_cur = dpm_net(net, class_labels, u_cur, s_cur) - eps_x
+
+    # Step 4
+    u_nxt = x - s_nxt * (torch.exp(r2 * h) - 1) * eps_x - (s_nxt * r2 / r1) * ((torch.exp(r2 * h) - 1) / (r2 * h) - 1) * D_cur
+
+    # Step 5
+    D_nxt = dpm_net(net, class_labels, u_nxt, s_nxt) - eps_x
+
+    # Step 6
+    x_nxt = x - t_nxt * (torch.exp(h) - 1) * eps_x - (t_nxt / r2) * ((torch.exp(h) - 1) / h - 1) * D_nxt
+    
+    return x_nxt
+
+
+# Simple, alpha(t) = 1, sigma(t) = t
+def ddim_solver_step(net, class_labels, x, t_cur, t_nxt):
+    eps = dpm_net(net, class_labels, x, t_cur)
+    x_nxt = x - (t_cur - t_nxt) * eps
+    
+    return x_nxt
+
+
+# Simple, alpha(t) = 1, sigma(t) = t
+def generic_simple_sampler_ode(
+    net, latents, solver, t_steps, class_labels=None
+):
+    
+    x_nxt = latents.to(torch.float64) * t_steps[0]
+    num_steps = len(t_steps)
+
+    for i, (t_cur, t_nxt) in enumerate(zip(t_steps[:-1], t_steps[1:])):
+        x_cur = x_nxt
+
+        if i == num_steps - 2:
+            x_nxt = ddim_solver_step(net, class_labels, x_cur, t_cur, t_nxt)
+        else:
+            x_nxt = solver(net, class_labels, x_cur, t_cur, t_nxt)
+
+    return x_nxt
+
 #----------------------------------------------------------------------------
 # Proposed EDM sampler (Algorithm 2).
 
+# Actually dpm solver for now
 def edm_sampler(
     net, latents, class_labels=None, randn_like=torch.randn_like,
     num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
@@ -36,11 +139,29 @@ def edm_sampler(
     t_steps = (sigma_max ** (1 / rho) + step_indices / (num_steps - 1) * (sigma_min ** (1 / rho) - sigma_max ** (1 / rho))) ** rho
     t_steps = torch.cat([net.round_sigma(t_steps), torch.zeros_like(t_steps[:1])]) # t_N = 0
 
+    # TODO: de-retardation
+    return generic_simple_sampler_ode(net, latents, dpm_solver_3_step, t_steps, class_labels)
+
     # Main sampling loop.
     x_next = latents.to(torch.float64) * t_steps[0]
     for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])): # 0, ..., N-1
         x_cur = x_next
 
+        #### DPM-Solver-2
+        # if i < num_steps - 1:
+        #     s = (t_cur * t_next).sqrt()
+        #     denoised_x = net(x_cur, t_cur, class_labels).to(torch.float64)
+        #     u = x_cur + (s / t_cur) * ((t_cur / t_next).sqrt() - 1) * (denoised_x - x_cur)
+        #     x_next = u
+        #     denoised_u = net(u, s, class_labels).to(torch.float64)
+        #     x_next = x_cur + ((t_cur - t_next) / s) * (denoised_u - u)
+        # else:
+
+        #     #### FIRST ORDER
+        #     denoised = net(x_cur, t_cur, class_labels).to(torch.float64)
+        #     x_next = x_cur * (t_next / t_cur) - (t_next / t_cur - 1) * denoised
+
+        #### EDM-HEUN
         # Increase noise temporarily.
         gamma = min(S_churn / num_steps, np.sqrt(2) - 1) if S_min <= t_cur <= S_max else 0
         t_hat = net.round_sigma(t_cur + gamma * t_cur)
