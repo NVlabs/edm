@@ -10,6 +10,7 @@
 
 import torch
 from torch_utils import persistence
+from typing import Callable
 
 #----------------------------------------------------------------------------
 # Loss function corresponding to the variance preserving (VP) formulation
@@ -80,56 +81,53 @@ class EDMLoss:
         return loss
 
 #----------------------------------------------------------------------------
+
 @persistence.persistent_class
-class DiscreteDDPLoss:
-    def __init__(self, sigma_data=0.5):
+class MonotonicEDMLoss:
+    def __init__(self, P_mean=-1.2, P_std=1.2, sigma_data=0.5):
+        self.P_mean = P_mean
+        self.P_std = P_std
+        self.lambda_mean = (-2) * self.P_mean
+        self.lambda_std = 2 * self.P_std
         self.sigma_data = sigma_data
-        self.alphas = None
-        self.sigmas = None
-
-    def setup_schedules(self, net):
-        net_model = net.module if hasattr(net, 'module') else net
-        with torch.no_grad():
-            self.alphas = net_model.alphas
-            self.sigmas = net_model.sigmas
-
-    def __call__(self, net, images, labels=None, augment_pipe=None):
-        if self.alphas is None:
-            self.setup_schedules(net)
-
-        # Mỏj loss jest w postaci (16), więc muszę wylosować t i obliczyć ε_t
-        # Generowanie z rozkładu jednostajnego
-        t = torch.randint(1, len(self.alphas), (images.shape[0],), device=images.device)
-        alpha_t, sigma_t = self.alphas[t], self.sigmas[t]
-        alpha_s, sigma_s = self.alphas[t-1], self.sigmas[t-1]
-    
-        # Obliczanie współczynników
-        # chwilowo wstawienie U_t jako 1 jako stała
-        gamma_s = (alpha_s/sigma_s)**2 * (sigma_t/alpha_t)**2
-
-        eta_s = (gamma_s - 1)/(torch.sqrt(gamma_s) + torch.sqrt(gamma_s - 1))
-        eta_s = eta_s.unsqueeze(1).unsqueeze(2).unsqueeze(3)
-        eta_s = eta_s.view(-1,1,1,1)
-
-        # Generowanie szumu
-        eps_t = torch.randn_like(images)
-        eps_s = torch.randn_like(images)
-
-        # Skorzystam ze wzoru 2, tylko przepiszę go że to jest z_s = alpha_s * x + sigma_s * epsilon_s
-        # gdzie epsilon_s jest zadany wzorem poniżej, w skó¶cie wyłączam sigmę przed nawias
-        epsilon_t = eps_t
-        epsilon_s = torch.sqrt(1 - eta_s**2) * epsilon_t + eta_s * eps_s
-
-        # Obliczanie z_t i z_s
-        z_t = alpha_t.view(-1,1,1,1)*images + sigma_t.view(-1,1,1,1)*epsilon_t
-        z_s = alpha_s.view(-1,1,1,1)*images + sigma_s.view(-1,1,1,1)*epsilon_s
-
-        # Przewidywanie ε_t, ze wzoru (2)
-        with torch.no_grad():
-            u_target = (z_s - alpha_s.view(-1,1,1,1)*images)/(sigma_s.view(-1,1,1,1))
-        u_pred = net(z_t, sigma_t, labels)
-
-        # wzór 16
-        loss = 0.5 * ((u_target - u_pred)**2).mean()
+        self.argmax_lambda = torch.tensor(-3.30778)
+        self.weight_lambda_max = ((torch.exp(-self.argmax_lambda) + self.sigma_data ** 2) /
+                                  (torch.exp(-self.argmax_lambda) * self.sigma_data ** 2))
         
+    def normal_pdf(self, x, mu=0, sigma=1):
+        return (1 / (sigma * (2 * torch.pi) ** 0.5)) * torch.exp(-((x - mu) ** 2) / (2 * sigma ** 2))
+
+    # argmax_lambda w(lambda) = -3.30778
+    def __call__(self, net, images, labels=None, augment_pipe=None):
+        rnd_normal = torch.randn([images.shape[0], 1, 1, 1], device=images.device)
+        sigma = (rnd_normal * self.P_std + self.P_mean).exp()
+        lambda_ = (-1) * (sigma ** 2).log()
+        weight = torch.where(
+            lambda_ < self.argmax_lambda,
+            (self.weight_lambda_max * torch.exp(-self.argmax_lambda) * 
+            self.normal_pdf(self.argmax_lambda, self.lambda_mean, self.lambda_std) / 
+            (torch.exp(-lambda_) * self.normal_pdf(lambda_, self.lambda_mean, self.lambda_std)) 
+            ),
+            (sigma ** 2 + self.sigma_data ** 2) / (sigma * self.sigma_data) ** 2
+        )
+        y, augment_labels = augment_pipe(images) if augment_pipe is not None else (images, None)
+        n = torch.randn_like(y) * sigma
+        D_yn = net(y + n, sigma, labels, augment_labels=augment_labels)
+        loss = weight * ((D_yn - y) ** 2)
         return loss
+
+#----------------------------------------------------------------------------
+
+@persistence.persistent_class
+class ULoss:
+    def __call__(self, net, images, labels=None, augment_pipe=None):
+        t = torch.rand([images.shape[0]], device=images.device) * (net.module.t_max - net.module.t_min) + net.module.t_min
+        y, augment_labels = augment_pipe(images) if augment_pipe is not None else (images, None)
+        eps = torch.randn_like(y)
+        D_yn = net(y * net.module.alpha(t).to(torch.float32).reshape(-1, 1, 1, 1) + 
+                   eps * net.module.sigma(t).to(torch.float32).reshape(-1, 1, 1, 1), 
+                   t, labels, augment_labels=augment_labels)
+        loss = (D_yn - eps * net.module.u(t).to(torch.float32).reshape(-1, 1, 1, 1)) ** 2
+        return loss
+
+#----------------------------------------------------------------------------

@@ -671,80 +671,233 @@ class EDMPrecond(torch.nn.Module):
         return torch.as_tensor(sigma)
 
 #----------------------------------------------------------------------------
-@persistence.persistent_class
-class DiscreteDDPPrecond(torch.nn.Module):
+
+class UPrecond(torch.nn.Module):
     def __init__(self,
-        img_resolution,
-        img_channels,
-        label_dim=0,
-        use_fp16=False,
-        sigma_data=0.5,
-        num_timesteps=1000,
-        model_type='DhariwalUNet',
-        **model_kwargs
+        img_resolution,                     # Image resolution.
+        img_channels,                       # Number of color channels.
+        label_dim       = 0,                # Number of class labels, 0 = unconditional.
+        use_fp16        = False,            # Execute the underlying model at FP16 precision?
+        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        t_min           = torch.tensor(5e-3),
+        t_max           = torch.tensor(1 - 5e-3),
+        **model_kwargs,                     # Keyword arguments for the underlying model.
     ):
         super().__init__()
         self.img_resolution = img_resolution
         self.img_channels = img_channels
         self.label_dim = label_dim
         self.use_fp16 = use_fp16
-        self.sigma_data = sigma_data
-        self.num_timesteps = num_timesteps
+        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
 
-        # Wzory wziąłem z pliku https://www.mimuw.edu.pl/~pokar/DeepLearn/4Mateusz/not_main.pdf
-        # ustawienie alpha i sigma
-        t = torch.linspace(0, 1, num_timesteps)
-        alphas = torch.cos(t * (torch.pi / 2))
-        sigmas = torch.sin(t * (torch.pi / 2))
-        self.register_buffer('alphas', alphas)
-        self.register_buffer('sigmas', sigmas)
+        self.t_min = t_min
+        self.t_max = t_max
+        self.u_constant = torch.max(-self.d_lambda(t_min), -self.d_lambda(t_max)) + 1e-3
 
-        # parametryzacja dla epsilona
-        self.Ut = torch.nn.Parameter(torch.ones(num_timesteps-1))
-        self.setup_eta_schedule()
+    def alpha(self, t):
+        return (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) / 
+            torch.cos(torch.tensor(0.008) * torch.pi / torch.tensor(2.016)))
+    
+    def sigma(self, t):
+        return torch.sqrt(1 - self.alpha(t) ** 2)
 
-    def setup_eta_schedule(self):
-        with torch.no_grad():
-            # wzór (14)
-            gamma = (self.alphas[:-1]/self.sigmas[:-1])**2 * (self.sigmas[1:]/self.alphas[1:])**2
-            # wzór (18)
-            min_ratio = (torch.sqrt(gamma - 1) / self.Ut.abs()).max().clamp(min=1.0)
-            self.Ut.data *= min_ratio
-            # wzór z końca kartki
-            numerator = gamma - 1
-            denominator = torch.sqrt(gamma)*self.Ut**2 + torch.sqrt(self.Ut**2 + 1 - gamma)
-            etas = numerator / denominator
-            self.register_buffer('etas', etas)
+    def lambda_(self, t):
+        return 2 * torch.log(self.alpha(t) / self.sigma(t))
 
-    def forward(self, x, sigma, class_labels=None, force_fp32=False, **model_kwargs):
-        # parametry z EDM - nie wiem czy finalnie będziemy to ruszać, może to do usunięcia
+    def d_lambda(self, t):
+        # https://www.wolframalpha.com/input?i2d=true&i=Divide%5Bd%2Cdt%5Dlog%5C%2840%29Divide%5B%5C%2840%29cos%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29*Divide%5Bpi%2C2.016%5D%5C%2841%29%5C%2841%29%2Csin%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29+*+Divide%5Bpi%2C2.016%5D%5C%2841%29%5D%5C%2841%29
+        return - 2 * torch.pi / (torch.tensor(2.016) * 
+                                (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) * 
+                                torch.sin((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016))))
+    
+    def u(self, t):
+        return torch.full_like(t, self.u_constant)
+
+    def forward(self, x, t, class_labels=None, force_fp32=False, **model_kwargs):
         x = x.to(torch.float32)
-        sigma = sigma.to(torch.float32).reshape(-1, 1, 1, 1)
-        c_skip = self.sigma_data ** 2 / (sigma ** 2 + self.sigma_data ** 2)
-        c_out = sigma * self.sigma_data / (sigma ** 2 + self.sigma_data ** 2).sqrt()
-        c_in = 1 / (self.sigma_data ** 2 + sigma ** 2).sqrt()
+        sigma = self.sigma(t).to(torch.float32).reshape(-1, 1, 1, 1)
+        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
+        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
+
         c_noise = sigma.log() / 4
 
-        # sigma jest funkcją monotoniczną, więc jest równowartościowa.
-        # Ponieważ operujemy na dyskretnych krokach czasowych t,
-        # musimy znaleźć indeks t, dla którego sigma_t jest najbliższe podanej wartości sigma
+        # Inspired by the edm, maybe can pass just sigma instead of c_noise
+        F_x = self.model(x.to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
+        assert F_x.dtype == dtype
+        return F_x
 
-        t_idx = self.sigma_to_t(sigma)
-        alpha_t = self.alphas[t_idx].reshape(-1, 1, 1, 1)
-        sigma_t = self.sigmas[t_idx].reshape(-1, 1, 1, 1)
-        eta_t = self.etas[t_idx].reshape(-1, 1, 1, 1)
+class UPrecondScore(torch.nn.Module):
+    def __init__(self,
+        img_resolution,                     # Image resolution.
+        img_channels,                       # Number of color channels.
+        label_dim       = 0,                # Number of class labels, 0 = unconditional.
+        use_fp16        = False,            # Execute the underlying model at FP16 precision?
+        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        t_min           = torch.tensor(5e-3),
+        t_max           = torch.tensor(1 - 5e-3),
+        **model_kwargs,                     # Keyword arguments for the underlying model.
+    ):
+        super().__init__()
+        self.img_resolution = img_resolution
+        self.img_channels = img_channels
+        self.label_dim = label_dim
+        self.use_fp16 = use_fp16
+        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
 
-        # wzór (1)
-        eps_t = torch.randn_like(x)
-        eps_t_prime = torch.randn_like(x)
-        zs = alpha_t * x + sigma_t * torch.sqrt(1 - eta_t**2) * eps_t + sigma_t * eta_t * eps_t_prime
+        self.t_min = t_min
+        self.t_max = t_max
 
-        F_x = self.model(zs.to(x.dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
+    def alpha(self, t):
+        return (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) / 
+            torch.cos(torch.tensor(0.008) * torch.pi / torch.tensor(2.016)))
+    
+    def sigma(self, t):
+        return torch.sqrt(1 - self.alpha(t) ** 2)
 
-        # ro również może do wywalenia, wzorowane na EDM
-        D_x = c_skip * x + c_out * F_x.to(torch.float32)
-        return D_x
+    def lambda_(self, t):
+        return 2 * torch.log(self.alpha(t) / self.sigma(t))
 
-    def sigma_to_t(self, sigma):
-        distances = torch.abs(self.sigmas - sigma.unsqueeze(1))
-        return torch.argmin(distances, dim=1)
+    def d_lambda(self, t):
+        # https://www.wolframalpha.com/input?i2d=true&i=Divide%5Bd%2Cdt%5Dlog%5C%2840%29Divide%5B%5C%2840%29cos%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29*Divide%5Bpi%2C2.016%5D%5C%2841%29%5C%2841%29%2Csin%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29+*+Divide%5Bpi%2C2.016%5D%5C%2841%29%5D%5C%2841%29
+        return - 2 * torch.pi / (torch.tensor(2.016) * 
+                                (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) * 
+                                torch.sin((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016))))
+
+    def u(self, t):
+        return self.sigma(t)
+
+    def forward(self, x, t, class_labels=None, force_fp32=False, **model_kwargs):
+        x = x.to(torch.float32)
+        sigma = self.sigma(t).to(torch.float32).reshape(-1, 1, 1, 1)
+        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
+        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
+
+        c_noise = sigma.log() / 4
+
+        # Inspired by the edm, maybe can pass just sigma instead of c_noise
+        F_x = self.model(x.to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
+        assert F_x.dtype == dtype
+        return F_x
+
+class UPrecondVE(torch.nn.Module):
+    def __init__(self,
+        img_resolution,                     # Image resolution.
+        img_channels,                       # Number of color channels.
+        label_dim       = 0,                # Number of class labels, 0 = unconditional.
+        use_fp16        = False,            # Execute the underlying model at FP16 precision?
+        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        t_min           = torch.tensor(5e-3),
+        t_max           = torch.tensor(1 - 5e-3),
+        **model_kwargs,                     # Keyword arguments for the underlying model.
+    ):
+        super().__init__()
+        self.img_resolution = img_resolution
+        self.img_channels = img_channels
+        self.label_dim = label_dim
+        self.use_fp16 = use_fp16
+        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
+
+        self.t_min = t_min
+        self.t_max = t_max
+
+    def alpha(self, t):
+        return (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) / 
+            torch.cos(torch.tensor(0.008) * torch.pi / torch.tensor(2.016)))
+    
+    def sigma(self, t):
+        return torch.sqrt(1 - self.alpha(t) ** 2)
+
+    def lambda_(self, t):
+        return 2 * torch.log(self.alpha(t) / self.sigma(t))
+
+    def d_lambda(self, t):
+        # https://www.wolframalpha.com/input?i2d=true&i=Divide%5Bd%2Cdt%5Dlog%5C%2840%29Divide%5B%5C%2840%29cos%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29*Divide%5Bpi%2C2.016%5D%5C%2841%29%5C%2841%29%2Csin%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29+*+Divide%5Bpi%2C2.016%5D%5C%2841%29%5D%5C%2841%29
+        return - 2 * torch.pi / (torch.tensor(2.016) * 
+                                (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) * 
+                                torch.sin((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016))))
+    
+    def la(self, t):
+        return 2 * torch.pi / torch.sin(t * torch.pi)
+
+    def u(self, t):
+        # return torch.max(
+        #     1 / self.sigma(t),
+        #     -self.d_lambda(t) * self.sigma(t) / 2
+        # ) * 2 # to satisfy u(t)^2 > -d_lambda(t)
+        return self.la(t) * self.sigma(t) / 2 * 11
+
+    def forward(self, x, t, class_labels=None, force_fp32=False, **model_kwargs):
+        x = x.to(torch.float32)
+        sigma = self.sigma(t).to(torch.float32).reshape(-1, 1, 1, 1)
+        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
+        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
+
+        c_noise = sigma.log() / 4
+
+        # Inspired by the edm, maybe can pass just sigma instead of c_noise
+        F_x = self.model(x.to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
+        assert F_x.dtype == dtype
+        return F_x
+    
+class UPrecondScoreVE(torch.nn.Module):
+    def __init__(self,
+        img_resolution,                     # Image resolution.
+        img_channels,                       # Number of color channels.
+        label_dim       = 0,                # Number of class labels, 0 = unconditional.
+        use_fp16        = False,            # Execute the underlying model at FP16 precision?
+        model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        t_min           = torch.tensor(5e-3),
+        t_max           = torch.tensor(1 - 5e-3),
+        **model_kwargs,                     # Keyword arguments for the underlying model.
+    ):
+        super().__init__()
+        self.img_resolution = img_resolution
+        self.img_channels = img_channels
+        self.label_dim = label_dim
+        self.use_fp16 = use_fp16
+        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
+
+        self.t_min = t_min
+        self.t_max = t_max
+
+    def alpha(self, t):
+        return (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) / 
+            torch.cos(torch.tensor(0.008) * torch.pi / torch.tensor(2.016)))
+    
+    def sigma(self, t):
+        return torch.sqrt(1 - self.alpha(t) ** 2)
+
+    def lambda_(self, t):
+        return 2 * torch.log(self.alpha(t) / self.sigma(t))
+
+    def d_lambda(self, t):
+        # https://www.wolframalpha.com/input?i2d=true&i=Divide%5Bd%2Cdt%5Dlog%5C%2840%29Divide%5B%5C%2840%29cos%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29*Divide%5Bpi%2C2.016%5D%5C%2841%29%5C%2841%29%2Csin%5C%2840%29%5C%2840%29t%2B0.008%5C%2841%29+*+Divide%5Bpi%2C2.016%5D%5C%2841%29%5D%5C%2841%29
+        return - 2 * torch.pi / (torch.tensor(2.016) * 
+                                (torch.cos((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016)) * 
+                                torch.sin((t + torch.tensor(0.008)) * torch.pi / torch.tensor(2.016))))
+    
+    def la(self, t):
+        return 2 * torch.pi / torch.sin(t * torch.pi)
+
+    def u(self, t):
+        # return torch.max(
+        #     1 / self.sigma(t),
+        #     -self.d_lambda(t) * self.sigma(t) / 2
+        # ) * 2 # to satisfy u(t)^2 > -d_lambda(t)
+        return torch.max(
+            1 / self.sigma(t),
+            self.la(t) * self.sigma(t) / 2
+        ) * 2
+
+    def forward(self, x, t, class_labels=None, force_fp32=False, **model_kwargs):
+        x = x.to(torch.float32)
+        sigma = self.sigma(t).to(torch.float32).reshape(-1, 1, 1, 1)
+        class_labels = None if self.label_dim == 0 else torch.zeros([1, self.label_dim], device=x.device) if class_labels is None else class_labels.to(torch.float32).reshape(-1, self.label_dim)
+        dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
+
+        c_noise = sigma.log() / 4
+
+        # Inspired by the edm, maybe can pass just sigma instead of c_noise
+        F_x = self.model(x.to(dtype), c_noise.flatten(), class_labels=class_labels, **model_kwargs)
+        assert F_x.dtype == dtype
+        return F_x

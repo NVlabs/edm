@@ -19,8 +19,71 @@ import PIL.Image
 import dnnlib
 from torch_utils import distributed as dist
 
+@torch.no_grad()
+def eta_constant(t):
+    return torch.zeros_like(t)
+
+@torch.no_grad()
+def eta_discrete(u, alpha_s, alpha_t, sigma_s, sigma_t):
+    gamma_s = (alpha_s**2 / sigma_s**2) * (sigma_t**2 / alpha_t**2)
+
+    numerator = gamma_s - 1
+    denominator = torch.sqrt(gamma_s * u**2) - torch.sqrt(u**2 + 1 - gamma_s)
+    return numerator / denominator
+
+@torch.no_grad()
+def eta_continous(net, s):
+    lambda_s_prime = net._d_lambda(s)
+    eta_s = net.u_constant - torch.sqrt(net.u_constant**2 + lambda_s_prime)
+    return eta_s
+
+
 #----------------------------------------------------------------------------
 # Proposed EDM sampler (Algorithm 2).
+def our_sampler(
+    net,
+    latents,
+    class_labels = None,
+    randn_like=torch.randn_like,
+    num_steps = 5, sigma_min=0.002, sigma_max=80, rho=7,
+    S_churn=0, S_min=0, S_max=float('inf'), S_noise=1,):
+
+    device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    t_min = torch.tensor(5e-3)
+    t_max = torch.tensor(1 - 5e-3)
+
+    z_t = latents.to(device)
+    ts = torch.linspace(t_max, t_min, steps=num_steps + 1, device=device)
+
+    for i in tqdm.trange(num_steps, desc="Sampling"):
+        t = ts[i].unsqueeze(0)
+        s = ts[i + 1].unsqueeze(0)
+
+        alpha_t = net.alpha(t)
+        sigma_t = net.sigma(t)
+        alpha_s = net.alpha(s)
+        sigma_s = net.sigma(s)
+
+        u_s = net.u(s)
+        u_t = net.u(t)
+
+        # 1. eta = 1
+        # 2. eta z pliku not_main.pdf
+        # 3. eta z pliku Pokarowski_Heidelberg2025.pdf
+        # eta_s = eta_constant(t)
+        eta_s = eta_discrete(u_s, alpha_t, alpha_s, sigma_s, sigma_t)
+        # eta_s = eta_continous(net, s)
+
+        eps_scaled = net(z_t, t, class_labels)
+        eps_pred = eps_pred = eps_scaled / u_t.reshape(-1, 1, 1, 1)
+
+        coeff_eps = sigma_s * torch.sqrt(1 - eta_s**2) - alpha_s * (sigma_t / alpha_t)
+        coeff_z = alpha_s / alpha_t
+
+        eps = torch.randn_like(z_t) if i < num_steps - 1 else 0
+
+        z_t = coeff_eps.reshape(-1,1,1,1) * eps_pred + coeff_z.reshape(-1,1,1,1) * z_t + sigma_s.reshape(-1,1,1,1) * eta_s.reshape(-1,1,1,1) * eps
+    return z_t
 
 def edm_sampler(
     net, latents, class_labels=None, randn_like=torch.randn_like,
@@ -175,82 +238,6 @@ def ablation_sampler(
 
     return x_next
 
-
-def ddpm_sampler(
-    net, latents, class_labels=None, randn_like=torch.randn_like,
-    num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
-    S_churn=0, S_min=0, S_max=float('inf'), S_noise=1,
-):
-    # Adjust noise levels based on network constraints
-    sigma_min = max(sigma_min, net.sigma_min)
-    sigma_max = min(sigma_max, net.sigma_max)
-
-    # Time step discretization
-    step_indices = torch.arange(num_steps, dtype=torch.float64, device=latents.device)
-    t_steps = (sigma_max ** (1 / rho) + step_indices / (num_steps - 1) * (sigma_min ** (1 / rho) - sigma_max ** (1 / rho)) ** rho
-    t_steps = torch.cat([net.round_sigma(t_steps), torch.zeros_like(t_steps[:1])])
-
-    # Main sampling loop
-    z = latents.to(torch.float64) * t_steps[0]
-    
-    for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])):
-        # Get current and next alpha/sigma using your network's buffers
-        t_idx_cur = net.sigma_to_t(t_cur)
-        t_idx_next = net.sigma_to_t(t_next)
-        
-        alpha_cur = net.alphas[t_idx_cur]
-        alpha_next = net.alphas[t_idx_next]
-        sigma_cur = t_cur
-        sigma_next = t_next
-        
-        # Get eta_s from your precomputed schedule
-        eta_s = net.etas[t_idx_cur] if t_idx_cur < len(net.etas) else net.etas[-1]
-
-        # Optional: Stochastic noise increase
-        gamma = min(S_churn / num_steps, np.sqrt(2) - 1) if S_min <= t_cur <= S_max else 0
-        t_hat = net.round_sigma(t_cur + gamma * t_cur)
-        z_hat = z + (t_hat ** 2 - t_cur ** 2).sqrt() * S_noise * randn_like(z)
-
-        # Prepare network inputs (matching your forward() method)
-        sigma_hat = t_hat.reshape(-1, 1, 1, 1).to(torch.float32)
-        c_in = 1 / (net.sigma_data ** 2 + sigma_hat ** 2).sqrt()
-        c_noise = sigma_hat.log() / 4
-
-        # Get epsilon prediction (using your existing model)
-        model = net.module.model if hasattr(net, 'module') else net.model
-        eps_pred = model((c_in * z_hat.to(torch.float32)).to(z_hat.dtype), 
-                      c_noise.flatten(),
-                      class_labels).to(torch.float64)
-
-        # Your update formula
-        term1 = (sigma_next * torch.sqrt(1 - eta_s**2) - (alpha_next/alpha_cur)*sigma_cur) * eps_pred
-        term2 = (alpha_next/alpha_cur) * z_hat
-        noise_term = sigma_next * eta_s * randn_like(z_hat)
-        
-        z_next = term1 + term2 + noise_term
-        z = z_next
-
-    return z
-
-#----------------------------------------------------------------------------
-# Discrete DDP sampler (Algorithm 3).
-def discrete_ddp_sampler(net, latents, class_labels=None, num_steps=18, device='cuda'):
-
-    # pochodzi z EDM
-    timesteps = torch.linspace(net.num_timesteps-1, 0, num_steps, dtype=torch.long, device=device)
-    z = latents.to(device)
-
-    for t in timesteps:
-
-        t_idx = t.long()
-        alpha_t = net.alphas[t_idx].reshape(-1, 1, 1, 1)
-        sigma_t = net.sigmas[t_idx].reshape(-1, 1, 1, 1)
-        eta_t = net.etas[t_idx].reshape(-1, 1, 1, 1)
-        eps_pred = net(z, sigma_t, class_labels)
-        noise = torch.randn_like(z) if t_idx > 0 else torch.zeros_like(z)
-        z = alpha_t * z + sigma_t * torch.sqrt(1 - eta_t**2) * eps_pred + sigma_t * eta_t * noise
-        
-    return z
 #----------------------------------------------------------------------------
 # Wrapper for torch.Generator that allows specifying a different random seed
 # for each sample in a minibatch.
@@ -366,7 +353,8 @@ def main(network_pkl, outdir, subdirs, seeds, class_idx, max_batch_size, device=
         # Generate images.
         sampler_kwargs = {key: value for key, value in sampler_kwargs.items() if value is not None}
         have_ablation_kwargs = any(x in sampler_kwargs for x in ['solver', 'discretization', 'schedule', 'scaling'])
-        sampler_fn = ablation_sampler if have_ablation_kwargs else edm_sampler
+        # sampler_fn = ablation_sampler if have_ablation_kwargs else edm_sampler
+        sampler_fn = our_sampler
         images = sampler_fn(net, latents, class_labels, randn_like=rnd.randn_like, **sampler_kwargs)
 
         # Save images.
